@@ -31,6 +31,31 @@ datas = [
 # 过滤不存在的数据文件
 datas = [(src, dst) for src, dst in datas if os.path.exists(src)]
 
+# 使用 PyInstaller 的 collect_data_files 收集包数据
+from PyInstaller.utils.hooks import collect_data_files, collect_all
+
+# 收集 Gradio 相关包的数据文件
+packages_to_collect = [
+    'gradio',
+    'gradio_client',
+    'safehttpx',
+    'huggingface_hub',
+    'starlette',
+    'uvicorn',
+    'httpcore',
+    'httpx',
+    'anyio',
+]
+
+for pkg in packages_to_collect:
+    try:
+        pkg_datas = collect_data_files(pkg)
+        if pkg_datas:
+            datas.extend(pkg_datas)
+            print(f"收集 {pkg} 数据文件: {len(pkg_datas)} 个")
+    except Exception as e:
+        print(f"警告: 无法收集 {pkg} 数据: {e}")
+
 # 隐式导入的模块 - 完整列表确保所有依赖被包含
 hiddenimports = [
     # ========== PyWebView (桌面窗口) ==========
