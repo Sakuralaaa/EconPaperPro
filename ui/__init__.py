@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""UI模块 - Gradio应用及组件"""
-from .app import create_app
+"""UI模块 - 原生 tkinter GUI"""
+from .native_app import main, EconPaperApp
 
-__all__ = ["create_app"]
+__all__ = ["main", "EconPaperApp"]

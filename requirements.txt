@@ -13,21 +13,9 @@ openai>=1.30.0
 pypdf>=3.0.0
 python-docx>=0.8.11
 
-# 学术搜索（可选）
-# scholarly>=1.7.0
-# serpapi>=0.1.0
-
 # 文本处理
 jieba>=0.42.1
 
 # 工具库
 httpx>=0.25.0
 tenacity>=8.2.0
-
-# 测试框架（开发用）
-pytest>=7.4.0
-pytest-cov>=4.1.0
-pytest-asyncio>=0.21.0
-
-# 打包工具（开发用）
-# pyinstaller>=6.0.0

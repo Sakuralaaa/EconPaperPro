@@ -1,7 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
 EconPaper Pro - PyInstaller Packaging Configuration
-
 Native tkinter GUI application - no browser required
 """
 
@@ -22,8 +21,6 @@ APP_ICON = None  # Can be set to 'assets/icon.ico'
 datas = [
     # Example data
     (os.path.join(PROJECT_DIR, 'data', 'exemplars'), 'data/exemplars'),
-    # Prompt templates
-    (os.path.join(PROJECT_DIR, 'prompts'), 'prompts'),
     # Configuration template
     (os.path.join(PROJECT_DIR, '.env.example'), '.'),
 ]
@@ -67,14 +64,16 @@ hiddenimports = [
     # ========== Document Parsing ==========
     'pypdf',
     'docx',
-    'python-docx',
+    
+    # ========== Text Processing ==========
+    'jieba',
     
     # ========== Other Dependencies ==========
     'dotenv',
-    'python-dotenv',
     'typing_extensions',
     'annotated_types',
     'packaging',
+    'tenacity',
     
     # ========== Project Modules ==========
     'config',
@@ -110,6 +109,7 @@ hiddenimports = [
     'utils',
     'utils.diff',
     'utils.text',
+    'launcher',
     
     # ========== Python Standard Library ==========
     'json',
