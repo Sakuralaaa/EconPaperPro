@@ -52,9 +52,9 @@ for pkg in packages_to_collect:
         pkg_datas = collect_data_files(pkg)
         if pkg_datas:
             datas.extend(pkg_datas)
-            print(f"收集 {pkg} 数据文件: {len(pkg_datas)} 个")
+            print(f"Collected {pkg} data files: {len(pkg_datas)}")
     except Exception as e:
-        print(f"警告: 无法收集 {pkg} 数据: {e}")
+        print(f"Warning: Cannot collect {pkg} data: {e}")
 
 # 隐式导入的模块 - 完整列表确保所有依赖被包含
 hiddenimports = [
