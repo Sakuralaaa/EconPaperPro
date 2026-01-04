@@ -2,7 +2,7 @@
 """
 EconPaper Pro - PyInstaller 打包配置
 
-用于将应用打包为 Windows 可执行文件
+用于将应用打包为 Windows 可执行文件（无控制台窗口）
 """
 
 import os
@@ -31,32 +31,119 @@ datas = [
 # 过滤不存在的数据文件
 datas = [(src, dst) for src, dst in datas if os.path.exists(src)]
 
-# 隐式导入的模块
+# 隐式导入的模块 - 完整列表确保所有依赖被包含
 hiddenimports = [
-    # Gradio 相关
+    # ========== PyWebView (桌面窗口) ==========
+    'webview',
+    'webview.platforms',
+    'webview.platforms.winforms',
+    'webview.platforms.edgechromium',
+    'webview.platforms.cef',
+    'clr',
+    'clr_loader',
+    'pythonnet',
+    
+    # ========== Gradio 及其依赖 ==========
     'gradio',
     'gradio.themes',
+    'gradio.themes.base',
+    'gradio.themes.soft',
     'gradio.components',
-    # OpenAI
+    'gradio.blocks',
+    'gradio.interface',
+    'gradio.layouts',
+    'gradio.routes',
+    'gradio.utils',
+    'gradio.processing_utils',
+    'gradio.networking',
+    'gradio_client',
+    'gradio_client.utils',
+    
+    # ========== FastAPI / Starlette / Uvicorn ==========
+    'fastapi',
+    'fastapi.applications',
+    'fastapi.routing',
+    'fastapi.middleware',
+    'starlette',
+    'starlette.applications',
+    'starlette.routing',
+    'starlette.middleware',
+    'starlette.responses',
+    'starlette.requests',
+    'starlette.staticfiles',
+    'starlette.templating',
+    'starlette.websockets',
+    'uvicorn',
+    'uvicorn.main',
+    'uvicorn.config',
+    'uvicorn.lifespan',
+    'uvicorn.lifespan.on',
+    'uvicorn.protocols',
+    'uvicorn.protocols.http',
+    'uvicorn.protocols.http.auto',
+    'uvicorn.protocols.http.h11_impl',
+    'uvicorn.protocols.websockets',
+    'uvicorn.protocols.websockets.auto',
+    'uvicorn.loops',
+    'uvicorn.loops.auto',
+    
+    # ========== HTTP / 网络 ==========
+    'httpx',
+    'httpx._transports',
+    'httpx._transports.default',
+    'httpcore',
+    'h11',
+    'anyio',
+    'anyio._backends',
+    'anyio._backends._asyncio',
+    'sniffio',
+    'websockets',
+    'websockets.legacy',
+    'websockets.legacy.server',
+    
+    # ========== OpenAI ==========
     'openai',
-    # ChromaDB
+    'openai.resources',
+    'openai._client',
+    'openai.types',
+    
+    # ========== ChromaDB ==========
     'chromadb',
     'chromadb.config',
-    # Pydantic
+    'chromadb.api',
+    'chromadb.db',
+    'chromadb.segment',
+    'onnxruntime',
+    'tokenizers',
+    
+    # ========== Pydantic ==========
     'pydantic',
+    'pydantic.fields',
+    'pydantic.main',
     'pydantic_settings',
-    # 其他依赖
-    'httpx',
-    'anyio',
-    'starlette',
-    'uvicorn',
-    'fastapi',
-    # tkinter (用于设置向导)
+    'pydantic_core',
+    
+    # ========== 其他依赖 ==========
+    'aiofiles',
+    'python_multipart',
+    'multipart',
+    'jinja2',
+    'markupsafe',
+    'orjson',
+    'typing_extensions',
+    'annotated_types',
+    'packaging',
+    'pillow',
+    'PIL',
+    'PIL.Image',
+    
+    # ========== tkinter (设置向导) ==========
     'tkinter',
     'tkinter.ttk',
     'tkinter.filedialog',
     'tkinter.messagebox',
-    # 项目模块
+    
+    # ========== 项目模块 ==========
     'config',
     'config.settings',
     'core',
@@ -70,6 +157,15 @@ hiddenimports = [
     'ui.app',
     'ui.components',
     'launcher',
+    
+    # ========== Python 标准库 ==========
+    'json',
+    'webbrowser',
+    'traceback',
+    'datetime',
+    'pathlib',
+    'logging',
+    'logging.handlers',
 ]
 
 # 排除的模块（减小包体积）
@@ -81,6 +177,9 @@ excludes = [
     'setuptools',
     'pip',
     'wheel',
+    'black',
+    'isort',
+    'mypy',
 ]
 
 # 分析配置
@@ -100,7 +199,7 @@ a = Analysis(
 # 清理重复文件
 pyz = PYZ(a.pure, a.zipped_data)
 
-# 主程序 EXE
+# 主程序 EXE - 隐藏控制台窗口
 exe = EXE(
     pyz,
     a.scripts,
@@ -111,7 +210,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,  # 设为 False 可隐藏控制台窗口
+    console=False,  # ★ 隐藏控制台窗口，显示为纯 GUI 应用
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
