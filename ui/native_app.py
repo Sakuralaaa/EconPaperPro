@@ -26,28 +26,30 @@ sys.path.insert(0, str(INTERNAL_DIR))
 
 
 class ModernStyle:
-    """现代化样式配置"""
+    """简约白样式配置"""
     
-    # 颜色主题
-    PRIMARY = "#667eea"
-    PRIMARY_DARK = "#5a67d8"
-    SECONDARY = "#764ba2"
-    SUCCESS = "#48bb78"
-    WARNING = "#ed8936"
-    ERROR = "#f56565"
+    # 颜色主题 (Apple Style)
+    PRIMARY = "#007AFF"       # 蓝色
+    PRIMARY_DARK = "#005BB7"  # 深蓝色 (用于悬停)
+    PRIMARY_LIGHT = "#E5F1FF"
+    SECONDARY = "#5856D6"     # 紫色 (替代原有的 SECONDARY)
+    SUCCESS = "#34C759"       # 绿色
+    WARNING = "#FF9500"       # 橙色
+    ERROR = "#FF3B30"         # 红色
     
     # 背景色
-    BG_MAIN = "#f7fafc"
-    BG_CARD = "#ffffff"
-    BG_SIDEBAR = "#2d3748"
+    BG_MAIN = "#FFFFFF"       # 纯白背景
+    BG_CARD = "#FFFFFF"
+    BG_SIDEBAR = "#F5F5F7"    # 浅灰侧边栏
+    BG_HOVER = "#E8E8ED"      # 悬停色
     
     # 文字颜色
-    TEXT_PRIMARY = "#2d3748"
-    TEXT_SECONDARY = "#718096"
-    TEXT_LIGHT = "#ffffff"
+    TEXT_PRIMARY = "#1D1D1F"  # 深灰文字
+    TEXT_SECONDARY = "#86868B" # 次要文字
+    TEXT_LIGHT = "#FFFFFF"
     
     # 边框
-    BORDER = "#e2e8f0"
+    BORDER = "#D2D2D7"        # 细边框
     
     @classmethod
     def configure_styles(cls, root):
@@ -60,22 +62,16 @@ class ModernStyle:
         except Exception:
             pass
         
+        # 全局配置
+        style.configure(".", font=("Microsoft YaHei UI", 10))
+        
         # 主按钮样式
         style.configure(
             "Primary.TButton",
             background=cls.PRIMARY,
             foreground=cls.TEXT_LIGHT,
             padding=(20, 10),
-            font=("Microsoft YaHei UI", 10)
-        )
-        
-        # 次要按钮
-        style.configure(
-            "Secondary.TButton",
-            background=cls.BG_CARD,
-            foreground=cls.TEXT_PRIMARY,
-            padding=(15, 8),
-            font=("Microsoft YaHei UI", 9)
+            borderwidth=0
         )
         
         # 标签
@@ -83,14 +79,7 @@ class ModernStyle:
             "Title.TLabel",
             background=cls.BG_MAIN,
             foreground=cls.TEXT_PRIMARY,
-            font=("Microsoft YaHei UI", 16, "bold")
-        )
-        
-        style.configure(
-            "Subtitle.TLabel",
-            background=cls.BG_MAIN,
-            foreground=cls.TEXT_SECONDARY,
-            font=("Microsoft YaHei UI", 10)
+            font=("Microsoft YaHei UI", 18, "bold")
         )
         
         # 框架
@@ -98,6 +87,16 @@ class ModernStyle:
             "Card.TFrame",
             background=cls.BG_CARD,
             relief="flat"
+        )
+        
+        # 下拉框样式
+        style.configure(
+            "TCombobox",
+            fieldbackground=cls.BG_MAIN,
+            background=cls.BG_MAIN,
+            bordercolor=cls.BORDER,
+            lightcolor=cls.BORDER,
+            darkcolor=cls.BORDER
         )
         
         return style
@@ -161,72 +160,93 @@ class EconPaperApp:
         self._show_page("diagnose")
         
     def _create_sidebar(self, parent):
-        """创建侧边栏"""
-        sidebar = tk.Frame(parent, bg=ModernStyle.BG_SIDEBAR, width=200)
+        """创建侧边栏 - 简约白风格"""
+        sidebar = tk.Frame(parent, bg=ModernStyle.BG_SIDEBAR, width=220, bd=0)
         sidebar.pack(side=tk.LEFT, fill=tk.Y)
         sidebar.pack_propagate(False)
         
+        # 右侧细边框
+        border = tk.Frame(sidebar, bg=ModernStyle.BORDER, width=1)
+        border.pack(side=tk.RIGHT, fill=tk.Y)
+        
         # Logo 区域
         logo_frame = tk.Frame(sidebar, bg=ModernStyle.BG_SIDEBAR)
-        logo_frame.pack(fill=tk.X, pady=20)
+        logo_frame.pack(fill=tk.X, pady=(30, 20), padx=20)
         
         logo_label = tk.Label(
             logo_frame,
-            text="📚 EconPaper Pro",
-            font=("Microsoft YaHei UI", 14, "bold"),
+            text="EconPaper Pro",
+            font=("Microsoft YaHei UI", 15, "bold"),
             bg=ModernStyle.BG_SIDEBAR,
-            fg=ModernStyle.TEXT_LIGHT
+            fg=ModernStyle.TEXT_PRIMARY
         )
-        logo_label.pack()
+        logo_label.pack(anchor="w")
         
         version_label = tk.Label(
             logo_frame,
-            text="v2.0.0",
+            text="智能学术论文优化系统",
             font=("Microsoft YaHei UI", 9),
             bg=ModernStyle.BG_SIDEBAR,
             fg=ModernStyle.TEXT_SECONDARY
         )
-        version_label.pack()
-        
-        # 分隔线
-        separator = tk.Frame(sidebar, bg=ModernStyle.TEXT_SECONDARY, height=1)
-        separator.pack(fill=tk.X, padx=20, pady=10)
+        version_label.pack(anchor="w")
         
         # 导航按钮
+        self.nav_buttons = {}
         nav_items = [
-            ("🔍 论文诊断", "diagnose"),
-            ("⚙️ 深度优化", "optimize"),
-            ("🔧 降重降AI", "dedup"),
-            ("🔎 学术搜索", "search"),
-            ("📝 退修助手", "revision"),
-            ("⚙️ 系统设置", "settings"),
+            ("diagnose", "🔍 论文诊断"),
+            ("optimize", "⚙️ 深度优化"),
+            ("dedup", "🔧 降重降AI"),
+            ("search", "🔎 学术搜索"),
+            ("revision", "📝 退修助手"),
+            ("settings", "⚙️ 模型管理"),
         ]
         
-        for text, page_id in nav_items:
+        for page_id, text in nav_items:
             btn = tk.Button(
                 sidebar,
-                text=text,
-                font=("Microsoft YaHei UI", 11),
+                text=f"  {text}",
+                font=("Microsoft YaHei UI", 10),
                 bg=ModernStyle.BG_SIDEBAR,
-                fg=ModernStyle.TEXT_LIGHT,
-                activebackground=ModernStyle.PRIMARY,
-                activeforeground=ModernStyle.TEXT_LIGHT,
+                fg=ModernStyle.TEXT_PRIMARY,
+                activebackground=ModernStyle.BG_HOVER,
+                activeforeground=ModernStyle.PRIMARY,
                 bd=0,
                 cursor="hand2",
                 anchor="w",
-                padx=20,
+                padx=15,
                 pady=12,
                 command=lambda p=page_id: self._show_page(p)
             )
-            btn.pack(fill=tk.X)
+            btn.pack(fill=tk.X, padx=10, pady=2)
+            self.nav_buttons[page_id] = btn
             
             # 鼠标悬停效果
-            btn.bind("<Enter>", lambda e, b=btn: b.configure(bg=ModernStyle.PRIMARY_DARK))
-            btn.bind("<Leave>", lambda e, b=btn: b.configure(bg=ModernStyle.BG_SIDEBAR))
+            btn.bind("<Enter>", lambda e, b=btn, p=page_id: self._on_nav_hover(b, p, True))
+            btn.bind("<Leave>", lambda e, b=btn, p=page_id: self._on_nav_hover(b, p, False))
+
+    def _on_nav_hover(self, btn, page_id, is_enter):
+        """导航栏悬停效果"""
+        if self.current_tab.get() == page_id:
+            return
+        if is_enter:
+            btn.configure(bg=ModernStyle.BG_HOVER)
+        else:
+            btn.configure(bg=ModernStyle.BG_SIDEBAR)
+
+    def _update_nav_style(self):
+        """更新导航栏选中样式"""
+        current = self.current_tab.get()
+        for page_id, btn in self.nav_buttons.items():
+            if page_id == current:
+                btn.configure(bg=ModernStyle.PRIMARY_LIGHT, fg=ModernStyle.PRIMARY, font=("Microsoft YaHei UI", 10, "bold"))
+            else:
+                btn.configure(bg=ModernStyle.BG_SIDEBAR, fg=ModernStyle.TEXT_PRIMARY, font=("Microsoft YaHei UI", 10))
     
     def _show_page(self, page_id: str):
         """显示指定页面"""
         self.current_tab.set(page_id)
+        self._update_nav_style()
         
         # 隐藏所有页面
         for page in self.pages.values():
@@ -237,127 +257,122 @@ class EconPaperApp:
             self.pages[page_id].pack(fill=tk.BOTH, expand=True)
     
     def _create_diagnose_page(self):
-        """创建论文诊断页面"""
+        """创建论文诊断页面 - 简约白风格"""
         page = tk.Frame(self.content_frame, bg=ModernStyle.BG_CARD)
         self.pages["diagnose"] = page
         
-        # 标题
-        title = tk.Label(
-            page,
-            text="🔍 论文诊断",
-            font=("Microsoft YaHei UI", 18, "bold"),
+        # 顶部标题区
+        header = tk.Frame(page, bg=ModernStyle.BG_CARD)
+        header.pack(fill=tk.X, padx=30, pady=(30, 20))
+        
+        tk.Label(
+            header,
+            text="论文诊断",
+            font=("Microsoft YaHei UI", 20, "bold"),
             bg=ModernStyle.BG_CARD,
             fg=ModernStyle.TEXT_PRIMARY
-        )
-        title.pack(anchor="w", padx=20, pady=(20, 5))
+        ).pack(anchor="w")
         
-        subtitle = tk.Label(
-            page,
-            text="上传论文文件或粘贴内容，获取多维度诊断报告",
+        tk.Label(
+            header,
+            text="通过多维度 AI 算法分析论文质量，提供改进建议",
             font=("Microsoft YaHei UI", 10),
             bg=ModernStyle.BG_CARD,
             fg=ModernStyle.TEXT_SECONDARY
-        )
-        subtitle.pack(anchor="w", padx=20, pady=(0, 20))
+        ).pack(anchor="w", pady=(5, 0))
         
-        # 分隔容器
-        content_container = tk.Frame(page, bg=ModernStyle.BG_CARD)
-        content_container.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+        # 主内容区
+        content = tk.Frame(page, bg=ModernStyle.BG_CARD)
+        content.pack(fill=tk.BOTH, expand=True, padx=30, pady=(0, 30))
         
-        # 左侧输入区
-        input_frame = tk.Frame(content_container, bg=ModernStyle.BG_CARD)
-        input_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        # 左侧输入
+        left_panel = tk.Frame(content, bg=ModernStyle.BG_CARD)
+        left_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 15))
         
-        # 文件上传按钮
+        # 操作栏
+        actions = tk.Frame(left_panel, bg=ModernStyle.BG_CARD)
+        actions.pack(fill=tk.X, pady=(0, 15))
+        
         upload_btn = tk.Button(
-            input_frame,
-            text="📁 选择论文文件 (PDF/Word)",
+            actions,
+            text="📁 选择文件",
             font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.PRIMARY,
-            fg=ModernStyle.TEXT_LIGHT,
-            activebackground=ModernStyle.PRIMARY_DARK,
-            activeforeground=ModernStyle.TEXT_LIGHT,
+            bg=ModernStyle.BG_SIDEBAR,
+            fg=ModernStyle.TEXT_PRIMARY,
+            activebackground=ModernStyle.BG_HOVER,
             bd=0,
             cursor="hand2",
-            padx=20,
-            pady=10,
+            padx=15,
+            pady=8,
             command=lambda: self._select_file("diagnose")
         )
-        upload_btn.pack(fill=tk.X, pady=(0, 10))
+        upload_btn.pack(side=tk.LEFT)
         
-        # 文件路径显示
         self.diag_file_label = tk.Label(
-            input_frame,
-            text="未选择文件",
+            actions,
+            text="未选择文件 (支持 PDF/Docx)",
             font=("Microsoft YaHei UI", 9),
             bg=ModernStyle.BG_CARD,
             fg=ModernStyle.TEXT_SECONDARY,
-            anchor="w"
+            padx=10
         )
-        self.diag_file_label.pack(fill=tk.X, pady=(0, 10))
+        self.diag_file_label.pack(side=tk.LEFT)
         
-        # 或者粘贴内容
-        or_label = tk.Label(
-            input_frame,
-            text="或粘贴论文内容：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        or_label.pack(fill=tk.X, pady=(10, 5))
+        # 输入框容器 (带边框)
+        input_border = tk.Frame(left_panel, bg=ModernStyle.BORDER, padx=1, pady=1)
+        input_border.pack(fill=tk.BOTH, expand=True)
         
-        # 文本输入框
         self.diag_text = scrolledtext.ScrolledText(
-            input_frame,
+            input_border,
             font=("Microsoft YaHei UI", 10),
             wrap=tk.WORD,
-            height=15,
             bg=ModernStyle.BG_MAIN,
             relief="flat",
-            bd=1
+            padx=10,
+            pady=10,
+            undo=True
         )
-        self.diag_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        self.diag_text.pack(fill=tk.BOTH, expand=True)
         
-        # 诊断按钮
+        # 底部按钮
         diag_btn = tk.Button(
-            input_frame,
-            text="🔍 开始诊断",
-            font=("Microsoft YaHei UI", 12, "bold"),
-            bg=ModernStyle.SUCCESS,
+            left_panel,
+            text="开始诊断",
+            font=("Microsoft YaHei UI", 11, "bold"),
+            bg=ModernStyle.PRIMARY,
             fg=ModernStyle.TEXT_LIGHT,
-            activebackground="#38a169",
-            activeforeground=ModernStyle.TEXT_LIGHT,
+            activebackground=ModernStyle.PRIMARY_DARK,
             bd=0,
             cursor="hand2",
             padx=30,
-            pady=12,
+            pady=10,
             command=self._run_diagnose
         )
-        diag_btn.pack(pady=10)
+        diag_btn.pack(pady=(20, 0))
         
-        # 右侧结果区
-        result_frame = tk.Frame(content_container, bg=ModernStyle.BG_CARD)
-        result_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        # 右侧结果
+        right_panel = tk.Frame(content, bg=ModernStyle.BG_CARD)
+        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(15, 0))
         
-        result_title = tk.Label(
-            result_frame,
+        tk.Label(
+            right_panel,
             text="诊断报告",
-            font=("Microsoft YaHei UI", 12, "bold"),
+            font=("Microsoft YaHei UI", 11, "bold"),
             bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        result_title.pack(fill=tk.X, pady=(0, 10))
+            fg=ModernStyle.TEXT_PRIMARY
+        ).pack(anchor="w", pady=(0, 10))
         
-        # 结果显示
+        result_border = tk.Frame(right_panel, bg=ModernStyle.BORDER, padx=1, pady=1)
+        result_border.pack(fill=tk.BOTH, expand=True)
+        
         self.diag_result = scrolledtext.ScrolledText(
-            result_frame,
+            result_border,
             font=("Microsoft YaHei UI", 10),
             wrap=tk.WORD,
-            bg=ModernStyle.BG_MAIN,
+            bg=ModernStyle.BG_SIDEBAR,
             relief="flat",
-            bd=1,
+            padx=10,
+            pady=10,
             state=tk.DISABLED
         )
         self.diag_result.pack(fill=tk.BOTH, expand=True)
@@ -366,758 +381,522 @@ class EconPaperApp:
         self.diag_file_path = None
         
     def _create_optimize_page(self):
-        """创建深度优化页面"""
+        """创建深度优化页面 - 简约白风格"""
         page = tk.Frame(self.content_frame, bg=ModernStyle.BG_CARD)
         self.pages["optimize"] = page
         
-        # 标题
-        title = tk.Label(
-            page,
-            text="⚙️ 深度优化",
-            font=("Microsoft YaHei UI", 18, "bold"),
+        # 顶部标题区
+        header = tk.Frame(page, bg=ModernStyle.BG_CARD)
+        header.pack(fill=tk.X, padx=30, pady=(30, 20))
+        
+        tk.Label(
+            header,
+            text="深度优化",
+            font=("Microsoft YaHei UI", 20, "bold"),
             bg=ModernStyle.BG_CARD,
             fg=ModernStyle.TEXT_PRIMARY
-        )
-        title.pack(anchor="w", padx=20, pady=(20, 5))
+        ).pack(anchor="w")
         
-        subtitle = tk.Label(
-            page,
-            text="选择优化阶段和目标期刊，对论文各部分进行智能优化",
+        tk.Label(
+            header,
+            text="针对不同投稿阶段和目标期刊，对论文各章节进行精细化打磨",
             font=("Microsoft YaHei UI", 10),
             bg=ModernStyle.BG_CARD,
             fg=ModernStyle.TEXT_SECONDARY
-        )
-        subtitle.pack(anchor="w", padx=20, pady=(0, 20))
+        ).pack(anchor="w", pady=(5, 0))
         
-        # 主容器
-        main_frame = tk.Frame(page, bg=ModernStyle.BG_CARD)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20)
+        # 主内容区
+        content = tk.Frame(page, bg=ModernStyle.BG_CARD)
+        content.pack(fill=tk.BOTH, expand=True, padx=30, pady=(0, 30))
         
-        # 左侧配置区
-        config_frame = tk.Frame(main_frame, bg=ModernStyle.BG_CARD)
-        config_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 20))
+        # 左侧配置面板
+        config_panel = tk.Frame(content, bg=ModernStyle.BG_SIDEBAR, width=240, padx=20, pady=20)
+        config_panel.pack(side=tk.LEFT, fill=tk.Y)
+        config_panel.pack_propagate(False)
         
-        # 优化阶段选择
-        stage_label = tk.Label(
-            config_frame,
-            text="优化阶段：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        stage_label.pack(fill=tk.X, pady=(0, 5))
-        
+        # 1. 优化阶段
+        tk.Label(config_panel, text="1. 优化阶段", font=("Microsoft YaHei UI", 10, "bold"), bg=ModernStyle.BG_SIDEBAR, fg=ModernStyle.TEXT_PRIMARY).pack(anchor="w", pady=(0, 10))
         self.opt_stage = tk.StringVar(value="submission")
-        stages = [
-            ("初稿重构", "draft"),
-            ("投稿优化", "submission"),
-            ("退修回应", "revision"),
-            ("终稿定稿", "final")
-        ]
-        
+        stages = [("初稿重构", "draft"), ("投稿优化", "submission"), ("退修回应", "revision"), ("终稿定稿", "final")]
         for text, value in stages:
-            rb = tk.Radiobutton(
-                config_frame,
-                text=text,
-                variable=self.opt_stage,
-                value=value,
-                font=("Microsoft YaHei UI", 9),
-                bg=ModernStyle.BG_CARD,
-                fg=ModernStyle.TEXT_PRIMARY,
-                selectcolor=ModernStyle.BG_MAIN,
-                activebackground=ModernStyle.BG_CARD,
-                cursor="hand2"
-            )
-            rb.pack(anchor="w")
-        
-        # 目标期刊
-        journal_label = tk.Label(
-            config_frame,
-            text="目标期刊：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        journal_label.pack(fill=tk.X, pady=(20, 5))
-        
+            tk.Radiobutton(config_panel, text=text, variable=self.opt_stage, value=value, bg=ModernStyle.BG_SIDEBAR, activebackground=ModernStyle.BG_SIDEBAR, font=("Microsoft YaHei UI", 9)).pack(anchor="w", padx=5)
+            
+        # 2. 目标期刊
+        tk.Label(config_panel, text="2. 目标期刊", font=("Microsoft YaHei UI", 10, "bold"), bg=ModernStyle.BG_SIDEBAR, fg=ModernStyle.TEXT_PRIMARY).pack(anchor="w", pady=(20, 10))
         self.opt_journal = tk.StringVar(value="")
         journals = ["", "经济研究", "管理世界", "金融研究", "中国工业经济", "会计研究", "其他"]
+        journal_combo = ttk.Combobox(config_panel, textvariable=self.opt_journal, values=journals, state="readonly", width=18)
+        journal_combo.pack(fill=tk.X, padx=5)
         
-        journal_combo = ttk.Combobox(
-            config_frame,
-            textvariable=self.opt_journal,
-            values=journals,
-            state="readonly",
-            font=("Microsoft YaHei UI", 9),
-            width=20
-        )
-        journal_combo.pack(fill=tk.X)
-        
-        # 优化部分选择
-        section_label = tk.Label(
-            config_frame,
-            text="优化部分：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        section_label.pack(fill=tk.X, pady=(20, 5))
-        
-        sections = [
-            ("标题", "title"),
-            ("摘要", "abstract"),
-            ("引言", "introduction"),
-            ("文献综述", "literature"),
-            ("理论假设", "theory"),
-            ("研究方法", "methodology"),
-            ("实证结果", "results"),
-            ("结论", "conclusion")
-        ]
-        
+        # 3. 优化章节
+        tk.Label(config_panel, text="3. 优化章节", font=("Microsoft YaHei UI", 10, "bold"), bg=ModernStyle.BG_SIDEBAR, fg=ModernStyle.TEXT_PRIMARY).pack(anchor="w", pady=(20, 10))
+        sections = [("标题", "title"), ("摘要", "abstract"), ("引言", "introduction"), ("文献综述", "literature"), ("理论假设", "theory"), ("研究方法", "methodology"), ("实证结果", "results"), ("结论", "conclusion")]
         self.opt_sections = {}
         for text, value in sections:
             var = tk.BooleanVar(value=value in ["abstract", "introduction"])
             self.opt_sections[value] = var
-            cb = tk.Checkbutton(
-                config_frame,
-                text=text,
-                variable=var,
-                font=("Microsoft YaHei UI", 9),
-                bg=ModernStyle.BG_CARD,
-                fg=ModernStyle.TEXT_PRIMARY,
-                selectcolor=ModernStyle.BG_MAIN,
-                activebackground=ModernStyle.BG_CARD,
-                cursor="hand2"
-            )
-            cb.pack(anchor="w")
+            tk.Checkbutton(config_panel, text=text, variable=var, bg=ModernStyle.BG_SIDEBAR, activebackground=ModernStyle.BG_SIDEBAR, font=("Microsoft YaHei UI", 9)).pack(anchor="w", padx=5)
+            
+        # 4. 文件上传
+        tk.Label(config_panel, text="4. 上传文件", font=("Microsoft YaHei UI", 10, "bold"), bg=ModernStyle.BG_SIDEBAR, fg=ModernStyle.TEXT_PRIMARY).pack(anchor="w", pady=(20, 10))
+        tk.Button(config_panel, text="📁 选择文件", font=("Microsoft YaHei UI", 9), bg=ModernStyle.BG_MAIN, bd=1, relief="solid", command=lambda: self._select_file("optimize")).pack(fill=tk.X, padx=5)
+        self.opt_file_label = tk.Label(config_panel, text="未选择文件", font=("Microsoft YaHei UI", 8), bg=ModernStyle.BG_SIDEBAR, fg=ModernStyle.TEXT_SECONDARY, wraplength=180)
+        self.opt_file_label.pack(pady=5)
         
-        # 文件上传
-        upload_btn = tk.Button(
-            config_frame,
-            text="📁 选择论文文件",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.PRIMARY,
-            fg=ModernStyle.TEXT_LIGHT,
-            activebackground=ModernStyle.PRIMARY_DARK,
-            bd=0,
-            cursor="hand2",
-            padx=15,
-            pady=8,
-            command=lambda: self._select_file("optimize")
-        )
-        upload_btn.pack(fill=tk.X, pady=(20, 5))
+        # 优化按钮
+        tk.Button(config_panel, text="开始优化", font=("Microsoft YaHei UI", 10, "bold"), bg=ModernStyle.PRIMARY, fg=ModernStyle.TEXT_LIGHT, bd=0, pady=8, command=self._run_optimize).pack(fill=tk.X, side=tk.BOTTOM)
         
-        self.opt_file_label = tk.Label(
-            config_frame,
-            text="未选择文件",
-            font=("Microsoft YaHei UI", 9),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_SECONDARY,
-            anchor="w",
-            wraplength=150
-        )
-        self.opt_file_label.pack(fill=tk.X)
+        # 右侧编辑/结果区
+        right_panel = tk.Frame(content, bg=ModernStyle.BG_CARD)
+        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(20, 0))
         
-        # 开始优化按钮
-        opt_btn = tk.Button(
-            config_frame,
-            text="⚙️ 开始优化",
-            font=("Microsoft YaHei UI", 12, "bold"),
-            bg=ModernStyle.SUCCESS,
-            fg=ModernStyle.TEXT_LIGHT,
-            activebackground="#38a169",
-            bd=0,
-            cursor="hand2",
-            padx=20,
-            pady=10,
-            command=self._run_optimize
-        )
-        opt_btn.pack(fill=tk.X, pady=(20, 0))
+        # 输入
+        tk.Label(right_panel, text="论文内容 (或粘贴文本)", font=("Microsoft YaHei UI", 10, "bold"), bg=ModernStyle.BG_CARD).pack(anchor="w", pady=(0, 5))
+        in_border = tk.Frame(right_panel, bg=ModernStyle.BORDER, padx=1, pady=1)
+        in_border.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+        self.opt_input = scrolledtext.ScrolledText(in_border, font=("Microsoft YaHei UI", 10), wrap=tk.WORD, bg=ModernStyle.BG_MAIN, relief="flat", padx=10, pady=10)
+        self.opt_input.pack(fill=tk.BOTH, expand=True)
         
-        # 右侧输入/输出区
-        io_frame = tk.Frame(main_frame, bg=ModernStyle.BG_CARD)
-        io_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-        
-        # 输入区
-        input_label = tk.Label(
-            io_frame,
-            text="论文内容（或直接粘贴）：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        input_label.pack(fill=tk.X, pady=(0, 5))
-        
-        self.opt_input = scrolledtext.ScrolledText(
-            io_frame,
-            font=("Microsoft YaHei UI", 10),
-            wrap=tk.WORD,
-            height=10,
-            bg=ModernStyle.BG_MAIN,
-            relief="flat",
-            bd=1
-        )
-        self.opt_input.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
-        
-        # 输出区
-        output_label = tk.Label(
-            io_frame,
-            text="优化结果：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        output_label.pack(fill=tk.X, pady=(0, 5))
-        
-        self.opt_output = scrolledtext.ScrolledText(
-            io_frame,
-            font=("Microsoft YaHei UI", 10),
-            wrap=tk.WORD,
-            height=10,
-            bg=ModernStyle.BG_MAIN,
-            relief="flat",
-            bd=1,
-            state=tk.DISABLED
-        )
+        # 输出
+        tk.Label(right_panel, text="优化建议与改写结果", font=("Microsoft YaHei UI", 10, "bold"), bg=ModernStyle.BG_CARD).pack(anchor="w", pady=(0, 5))
+        out_border = tk.Frame(right_panel, bg=ModernStyle.BORDER, padx=1, pady=1)
+        out_border.pack(fill=tk.BOTH, expand=True)
+        self.opt_output = scrolledtext.ScrolledText(out_border, font=("Microsoft YaHei UI", 10), wrap=tk.WORD, bg=ModernStyle.BG_SIDEBAR, relief="flat", padx=10, pady=10, state=tk.DISABLED)
         self.opt_output.pack(fill=tk.BOTH, expand=True)
         
         self.opt_file_path = None
         
     def _create_dedup_page(self):
-        """创建降重降AI页面"""
+        """创建降重降AI页面 - 简约白风格"""
         page = tk.Frame(self.content_frame, bg=ModernStyle.BG_CARD)
         self.pages["dedup"] = page
         
-        # 标题
-        title = tk.Label(
-            page,
-            text="🔧 降重降AI",
-            font=("Microsoft YaHei UI", 18, "bold"),
+        # 顶部标题区
+        header = tk.Frame(page, bg=ModernStyle.BG_CARD)
+        header.pack(fill=tk.X, padx=30, pady=(30, 20))
+        
+        tk.Label(
+            header,
+            text="降重与降 AI",
+            font=("Microsoft YaHei UI", 20, "bold"),
             bg=ModernStyle.BG_CARD,
             fg=ModernStyle.TEXT_PRIMARY
-        )
-        title.pack(anchor="w", padx=20, pady=(20, 5))
+        ).pack(anchor="w")
         
-        subtitle = tk.Label(
-            page,
-            text="输入文本，进行智能降重或降AI处理",
+        tk.Label(
+            header,
+            text="智能改写文本，降低重复率与 AI 检测痕迹",
             font=("Microsoft YaHei UI", 10),
             bg=ModernStyle.BG_CARD,
             fg=ModernStyle.TEXT_SECONDARY
-        )
-        subtitle.pack(anchor="w", padx=20, pady=(0, 20))
+        ).pack(anchor="w", pady=(5, 0))
         
-        # 主容器
-        main_frame = tk.Frame(page, bg=ModernStyle.BG_CARD)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20)
+        # 主内容区
+        content = tk.Frame(page, bg=ModernStyle.BG_CARD)
+        content.pack(fill=tk.BOTH, expand=True, padx=30, pady=(0, 30))
         
-        # 配置区
-        config_frame = tk.Frame(main_frame, bg=ModernStyle.BG_CARD)
-        config_frame.pack(fill=tk.X, pady=(0, 10))
+        # 顶部工具栏 (参数配置)
+        toolbar = tk.Frame(content, bg=ModernStyle.BG_SIDEBAR, padx=15, pady=10)
+        toolbar.pack(fill=tk.X, pady=(0, 15))
         
-        # 降重强度
-        strength_label = tk.Label(
-            config_frame,
-            text="降重强度：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY
-        )
-        strength_label.pack(side=tk.LEFT)
-        
-        self.dedup_strength = tk.Scale(
-            config_frame,
-            from_=1,
-            to=5,
-            orient=tk.HORIZONTAL,
-            length=200,
-            bg=ModernStyle.BG_CARD,
-            highlightthickness=0,
-            font=("Microsoft YaHei UI", 9)
-        )
+        tk.Label(toolbar, text="处理强度:", font=("Microsoft YaHei UI", 9), bg=ModernStyle.BG_SIDEBAR).pack(side=tk.LEFT)
+        self.dedup_strength = tk.Scale(toolbar, from_=1, to=5, orient=tk.HORIZONTAL, length=120, bg=ModernStyle.BG_SIDEBAR, highlightthickness=0, bd=0)
         self.dedup_strength.set(3)
         self.dedup_strength.pack(side=tk.LEFT, padx=10)
         
-        # 保留术语
-        terms_label = tk.Label(
-            config_frame,
-            text="保留术语（逗号分隔）：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY
-        )
-        terms_label.pack(side=tk.LEFT, padx=(20, 0))
+        tk.Label(toolbar, text="保留术语:", font=("Microsoft YaHei UI", 9), bg=ModernStyle.BG_SIDEBAR).pack(side=tk.LEFT, padx=(20, 0))
+        self.dedup_terms = tk.Entry(toolbar, font=("Microsoft YaHei UI", 9), width=25, bg=ModernStyle.BG_MAIN, relief="flat")
+        self.dedup_terms.pack(side=tk.LEFT, padx=5, ipady=3)
         
-        self.dedup_terms = tk.Entry(
-            config_frame,
-            font=("Microsoft YaHei UI", 10),
-            width=30,
-            bg=ModernStyle.BG_MAIN,
-            relief="flat",
-            bd=1
-        )
-        self.dedup_terms.pack(side=tk.LEFT, padx=10)
+        # 分栏布局
+        panels = tk.Frame(content, bg=ModernStyle.BG_CARD)
+        panels.pack(fill=tk.BOTH, expand=True)
         
-        # 输入区
-        input_label = tk.Label(
-            main_frame,
-            text="输入文本：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        input_label.pack(fill=tk.X, pady=(10, 5))
+        # 左侧输入
+        left_p = tk.Frame(panels, bg=ModernStyle.BG_CARD)
+        left_p.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
         
-        self.dedup_input = scrolledtext.ScrolledText(
-            main_frame,
-            font=("Microsoft YaHei UI", 10),
-            wrap=tk.WORD,
-            height=8,
-            bg=ModernStyle.BG_MAIN,
-            relief="flat",
-            bd=1
-        )
-        self.dedup_input.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        tk.Label(left_p, text="原始文本", font=("Microsoft YaHei UI", 10, "bold"), bg=ModernStyle.BG_CARD).pack(anchor="w", pady=(0, 5))
+        in_b = tk.Frame(left_p, bg=ModernStyle.BORDER, padx=1, pady=1)
+        in_b.pack(fill=tk.BOTH, expand=True)
+        self.dedup_input = scrolledtext.ScrolledText(in_b, font=("Microsoft YaHei UI", 10), wrap=tk.WORD, bg=ModernStyle.BG_MAIN, relief="flat", padx=10, pady=10)
+        self.dedup_input.pack(fill=tk.BOTH, expand=True)
         
-        # 按钮区
-        btn_frame = tk.Frame(main_frame, bg=ModernStyle.BG_CARD)
-        btn_frame.pack(fill=tk.X, pady=10)
+        # 中间按钮列
+        mid_p = tk.Frame(panels, bg=ModernStyle.BG_CARD, width=120)
+        mid_p.pack(side=tk.LEFT, fill=tk.Y, padx=10)
         
-        dedup_btn = tk.Button(
-            btn_frame,
-            text="📉 降重",
-            font=("Microsoft YaHei UI", 11),
-            bg=ModernStyle.PRIMARY,
-            fg=ModernStyle.TEXT_LIGHT,
-            activebackground=ModernStyle.PRIMARY_DARK,
-            bd=0,
-            cursor="hand2",
-            padx=25,
-            pady=10,
-            command=self._run_dedup
-        )
-        dedup_btn.pack(side=tk.LEFT, padx=(0, 10))
+        btn_config = [
+            ("📉 智能降重", self._run_dedup, ModernStyle.PRIMARY),
+            ("🤖 降 AI 痕迹", self._run_deai, ModernStyle.SECONDARY),
+            ("⚡ 深度全改", self._run_both_dedup, ModernStyle.SUCCESS)
+        ]
         
-        deai_btn = tk.Button(
-            btn_frame,
-            text="🤖 降AI",
-            font=("Microsoft YaHei UI", 11),
-            bg=ModernStyle.SECONDARY,
-            fg=ModernStyle.TEXT_LIGHT,
-            activebackground="#6b4190",
-            bd=0,
-            cursor="hand2",
-            padx=25,
-            pady=10,
-            command=self._run_deai
-        )
-        deai_btn.pack(side=tk.LEFT, padx=(0, 10))
+        tk.Label(mid_p, bg=ModernStyle.BG_CARD).pack(expand=True) # 占位
+        for text, cmd, color in btn_config:
+            tk.Button(mid_p, text=text, font=("Microsoft YaHei UI", 9), bg=color, fg="white", bd=0, width=12, pady=10, cursor="hand2", command=cmd).pack(pady=5)
+        tk.Label(mid_p, bg=ModernStyle.BG_CARD).pack(expand=True) # 占位
         
-        both_btn = tk.Button(
-            btn_frame,
-            text="⚡ 双重处理",
-            font=("Microsoft YaHei UI", 11),
-            bg=ModernStyle.SUCCESS,
-            fg=ModernStyle.TEXT_LIGHT,
-            activebackground="#38a169",
-            bd=0,
-            cursor="hand2",
-            padx=25,
-            pady=10,
-            command=self._run_both_dedup
-        )
-        both_btn.pack(side=tk.LEFT)
+        # 右侧输出
+        right_p = tk.Frame(panels, bg=ModernStyle.BG_CARD)
+        right_p.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 0))
         
-        # 输出区
-        output_label = tk.Label(
-            main_frame,
-            text="处理结果：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        output_label.pack(fill=tk.X, pady=(10, 5))
-        
-        self.dedup_output = scrolledtext.ScrolledText(
-            main_frame,
-            font=("Microsoft YaHei UI", 10),
-            wrap=tk.WORD,
-            height=8,
-            bg=ModernStyle.BG_MAIN,
-            relief="flat",
-            bd=1,
-            state=tk.DISABLED
-        )
+        tk.Label(right_p, text="改写结果", font=("Microsoft YaHei UI", 10, "bold"), bg=ModernStyle.BG_CARD).pack(anchor="w", pady=(0, 5))
+        out_b = tk.Frame(right_p, bg=ModernStyle.BORDER, padx=1, pady=1)
+        out_b.pack(fill=tk.BOTH, expand=True)
+        self.dedup_output = scrolledtext.ScrolledText(out_b, font=("Microsoft YaHei UI", 10), wrap=tk.WORD, bg=ModernStyle.BG_SIDEBAR, relief="flat", padx=10, pady=10, state=tk.DISABLED)
         self.dedup_output.pack(fill=tk.BOTH, expand=True)
         
     def _create_search_page(self):
-        """创建学术搜索页面"""
+        """创建学术搜索页面 - 简约白风格"""
         page = tk.Frame(self.content_frame, bg=ModernStyle.BG_CARD)
         self.pages["search"] = page
         
-        # 标题
-        title = tk.Label(
-            page,
-            text="🔎 学术搜索",
-            font=("Microsoft YaHei UI", 18, "bold"),
+        # 顶部标题区
+        header = tk.Frame(page, bg=ModernStyle.BG_CARD)
+        header.pack(fill=tk.X, padx=30, pady=(30, 20))
+        
+        tk.Label(
+            header,
+            text="学术搜索",
+            font=("Microsoft YaHei UI", 20, "bold"),
             bg=ModernStyle.BG_CARD,
             fg=ModernStyle.TEXT_PRIMARY
-        )
-        title.pack(anchor="w", padx=20, pady=(20, 5))
+        ).pack(anchor="w")
         
-        subtitle = tk.Label(
-            page,
-            text="搜索 Google Scholar 或知网文献",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_SECONDARY
-        )
-        subtitle.pack(anchor="w", padx=20, pady=(0, 20))
+        # 搜索栏 (Apple Style Search Bar)
+        search_bar = tk.Frame(page, bg=ModernStyle.BG_CARD)
+        search_bar.pack(fill=tk.X, padx=30, pady=(0, 20))
         
-        # 搜索区
-        search_frame = tk.Frame(page, bg=ModernStyle.BG_CARD)
-        search_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
+        search_container = tk.Frame(search_bar, bg=ModernStyle.BG_SIDEBAR, padx=10, pady=5)
+        search_container.pack(fill=tk.X)
         
-        # 搜索框
-        self.search_query = tk.Entry(
-            search_frame,
-            font=("Microsoft YaHei UI", 12),
-            width=40,
-            bg=ModernStyle.BG_MAIN,
-            relief="flat",
-            bd=1
-        )
-        self.search_query.pack(side=tk.LEFT, padx=(0, 10), ipady=8)
+        tk.Label(search_container, text="🔍", font=("Microsoft YaHei UI", 12), bg=ModernStyle.BG_SIDEBAR).pack(side=tk.LEFT, padx=5)
+        
+        self.search_query = tk.Entry(search_container, font=("Microsoft YaHei UI", 11), bg=ModernStyle.BG_SIDEBAR, relief="flat", bd=0)
+        self.search_query.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         self.search_query.insert(0, "数字经济 企业创新")
         
-        # 来源选择
         self.search_source = tk.StringVar(value="Google Scholar")
-        source_combo = ttk.Combobox(
-            search_frame,
-            textvariable=self.search_source,
-            values=["Google Scholar", "知网 CNKI"],
-            state="readonly",
-            font=("Microsoft YaHei UI", 10),
-            width=15
-        )
-        source_combo.pack(side=tk.LEFT, padx=(0, 10))
+        source_combo = ttk.Combobox(search_container, textvariable=self.search_source, values=["Google Scholar", "知网 CNKI"], state="readonly", width=15)
+        source_combo.pack(side=tk.LEFT, padx=10)
         
-        # 搜索按钮
         search_btn = tk.Button(
-            search_frame,
-            text="🔎 搜索",
-            font=("Microsoft YaHei UI", 11),
+            search_bar,
+            text="搜索文献",
+            font=("Microsoft YaHei UI", 10, "bold"),
             bg=ModernStyle.PRIMARY,
             fg=ModernStyle.TEXT_LIGHT,
-            activebackground=ModernStyle.PRIMARY_DARK,
             bd=0,
-            cursor="hand2",
-            padx=20,
+            padx=25,
             pady=8,
+            cursor="hand2",
             command=self._run_search
         )
-        search_btn.pack(side=tk.LEFT)
+        search_btn.pack(pady=15)
         
         # 结果区
-        result_label = tk.Label(
-            page,
-            text="搜索结果：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        result_label.pack(fill=tk.X, padx=20, pady=(10, 5))
+        content = tk.Frame(page, bg=ModernStyle.BG_CARD)
+        content.pack(fill=tk.BOTH, expand=True, padx=30, pady=(0, 30))
+        
+        res_b = tk.Frame(content, bg=ModernStyle.BORDER, padx=1, pady=1)
+        res_b.pack(fill=tk.BOTH, expand=True)
         
         self.search_result = scrolledtext.ScrolledText(
-            page,
+            res_b,
             font=("Microsoft YaHei UI", 10),
             wrap=tk.WORD,
             bg=ModernStyle.BG_MAIN,
             relief="flat",
-            bd=1,
+            padx=15,
+            pady=15,
             state=tk.DISABLED
         )
-        self.search_result.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+        self.search_result.pack(fill=tk.BOTH, expand=True)
         
     def _create_revision_page(self):
-        """创建退修助手页面"""
+        """创建退修助手页面 - 简约白风格"""
         page = tk.Frame(self.content_frame, bg=ModernStyle.BG_CARD)
         self.pages["revision"] = page
         
-        # 标题
-        title = tk.Label(
-            page,
-            text="📝 退修助手",
-            font=("Microsoft YaHei UI", 18, "bold"),
+        # 顶部标题区
+        header = tk.Frame(page, bg=ModernStyle.BG_CARD)
+        header.pack(fill=tk.X, padx=30, pady=(30, 20))
+        
+        tk.Label(
+            header,
+            text="退修助手",
+            font=("Microsoft YaHei UI", 20, "bold"),
             bg=ModernStyle.BG_CARD,
             fg=ModernStyle.TEXT_PRIMARY
-        )
-        title.pack(anchor="w", padx=20, pady=(20, 5))
+        ).pack(anchor="w")
         
-        subtitle = tk.Label(
-            page,
-            text="粘贴审稿意见，生成回应策略和回应信",
+        tk.Label(
+            header,
+            text="智能解析审稿意见，生成逐条回应策略与润色后的回应信",
             font=("Microsoft YaHei UI", 10),
             bg=ModernStyle.BG_CARD,
             fg=ModernStyle.TEXT_SECONDARY
-        )
-        subtitle.pack(anchor="w", padx=20, pady=(0, 20))
+        ).pack(anchor="w", pady=(5, 0))
         
-        # 主容器
-        main_frame = tk.Frame(page, bg=ModernStyle.BG_CARD)
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=20)
+        # 主内容区
+        content = tk.Frame(page, bg=ModernStyle.BG_CARD)
+        content.pack(fill=tk.BOTH, expand=True, padx=30, pady=(0, 30))
         
         # 左侧输入
-        input_frame = tk.Frame(main_frame, bg=ModernStyle.BG_CARD)
-        input_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
+        left_panel = tk.Frame(content, bg=ModernStyle.BG_CARD)
+        left_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 15))
         
-        comments_label = tk.Label(
-            input_frame,
-            text="审稿意见：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        comments_label.pack(fill=tk.X, pady=(0, 5))
+        tk.Label(left_panel, text="审稿意见 (Reviewer Comments)", font=("Microsoft YaHei UI", 10, "bold"), bg=ModernStyle.BG_CARD).pack(anchor="w", pady=(0, 5))
+        comm_b = tk.Frame(left_panel, bg=ModernStyle.BORDER, padx=1, pady=1)
+        comm_b.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+        self.rev_comments = scrolledtext.ScrolledText(comm_b, font=("Microsoft YaHei UI", 10), wrap=tk.WORD, bg=ModernStyle.BG_MAIN, relief="flat", padx=10, pady=10)
+        self.rev_comments.pack(fill=tk.BOTH, expand=True)
         
-        self.rev_comments = scrolledtext.ScrolledText(
-            input_frame,
-            font=("Microsoft YaHei UI", 10),
-            wrap=tk.WORD,
-            height=12,
-            bg=ModernStyle.BG_MAIN,
-            relief="flat",
-            bd=1
-        )
-        self.rev_comments.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        tk.Label(left_panel, text="论文摘要 (可选，提供上下文)", font=("Microsoft YaHei UI", 10, "bold"), bg=ModernStyle.BG_CARD).pack(anchor="w", pady=(0, 5))
+        sum_b = tk.Frame(left_panel, bg=ModernStyle.BORDER, padx=1, pady=1)
+        sum_b.pack(fill=tk.X, pady=(0, 15))
+        self.rev_summary = scrolledtext.ScrolledText(sum_b, font=("Microsoft YaHei UI", 10), wrap=tk.WORD, height=6, bg=ModernStyle.BG_MAIN, relief="flat", padx=10, pady=10)
+        self.rev_summary.pack(fill=tk.X)
         
-        summary_label = tk.Label(
-            input_frame,
-            text="论文摘要（可选）：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        summary_label.pack(fill=tk.X, pady=(0, 5))
-        
-        self.rev_summary = scrolledtext.ScrolledText(
-            input_frame,
-            font=("Microsoft YaHei UI", 10),
-            wrap=tk.WORD,
-            height=5,
-            bg=ModernStyle.BG_MAIN,
-            relief="flat",
-            bd=1
-        )
-        self.rev_summary.pack(fill=tk.BOTH, pady=(0, 10))
-        
-        rev_btn = tk.Button(
-            input_frame,
-            text="📝 生成回应",
-            font=("Microsoft YaHei UI", 12, "bold"),
-            bg=ModernStyle.SUCCESS,
+        tk.Button(
+            left_panel,
+            text="生成回应策略",
+            font=("Microsoft YaHei UI", 11, "bold"),
+            bg=ModernStyle.PRIMARY,
             fg=ModernStyle.TEXT_LIGHT,
-            activebackground="#38a169",
             bd=0,
-            cursor="hand2",
-            padx=25,
             pady=10,
+            cursor="hand2",
             command=self._run_revision
-        )
-        rev_btn.pack()
+        ).pack(fill=tk.X)
         
-        # 右侧输出
-        output_frame = tk.Frame(main_frame, bg=ModernStyle.BG_CARD)
-        output_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
+        # 右侧结果
+        right_panel = tk.Frame(content, bg=ModernStyle.BG_CARD)
+        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(15, 0))
         
-        output_label = tk.Label(
-            output_frame,
-            text="回应结果：",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        output_label.pack(fill=tk.X, pady=(0, 5))
-        
-        self.rev_output = scrolledtext.ScrolledText(
-            output_frame,
-            font=("Microsoft YaHei UI", 10),
-            wrap=tk.WORD,
-            bg=ModernStyle.BG_MAIN,
-            relief="flat",
-            bd=1,
-            state=tk.DISABLED
-        )
-        self.rev_output.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
+        tk.Label(right_panel, text="回应建议与回应信草案", font=("Microsoft YaHei UI", 11, "bold"), bg=ModernStyle.BG_CARD).pack(anchor="w", pady=(0, 10))
+        res_b = tk.Frame(right_panel, bg=ModernStyle.BORDER, padx=1, pady=1)
+        res_b.pack(fill=tk.BOTH, expand=True)
+        self.rev_output = scrolledtext.ScrolledText(res_b, font=("Microsoft YaHei UI", 10), wrap=tk.WORD, bg=ModernStyle.BG_SIDEBAR, relief="flat", padx=15, pady=15, state=tk.DISABLED)
+        self.rev_output.pack(fill=tk.BOTH, expand=True)
         
     def _create_settings_page(self):
-        """创建设置页面"""
+        """创建设置页面 - 简约白风格 + Cherry Studio 模式"""
         page = tk.Frame(self.content_frame, bg=ModernStyle.BG_CARD)
         self.pages["settings"] = page
         
-        # 标题
-        title = tk.Label(
-            page,
-            text="⚙️ 系统设置",
-            font=("Microsoft YaHei UI", 18, "bold"),
+        # 顶部标题区
+        header = tk.Frame(page, bg=ModernStyle.BG_CARD)
+        header.pack(fill=tk.X, padx=30, pady=(30, 20))
+        
+        tk.Label(
+            header,
+            text="模型管理",
+            font=("Microsoft YaHei UI", 20, "bold"),
             bg=ModernStyle.BG_CARD,
             fg=ModernStyle.TEXT_PRIMARY
-        )
-        title.pack(anchor="w", padx=20, pady=(20, 5))
+        ).pack(anchor="w")
         
-        subtitle = tk.Label(
-            page,
-            text="配置 API 密钥和系统参数",
+        tk.Label(
+            header,
+            text="配置 AI 模型供应商、API 密钥及嵌入模型参数",
             font=("Microsoft YaHei UI", 10),
             bg=ModernStyle.BG_CARD,
             fg=ModernStyle.TEXT_SECONDARY
+        ).pack(anchor="w", pady=(5, 0))
+        
+        # 创建带滚动条的主容器
+        main_canvas = tk.Canvas(page, bg=ModernStyle.BG_CARD, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(page, orient="vertical", command=main_canvas.yview)
+        scrollable_frame = tk.Frame(main_canvas, bg=ModernStyle.BG_CARD)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: main_canvas.configure(scrollregion=main_canvas.bbox("all"))
         )
-        subtitle.pack(anchor="w", padx=20, pady=(0, 20))
         
-        # 设置容器
-        settings_frame = tk.Frame(page, bg=ModernStyle.BG_CARD)
-        settings_frame.pack(fill=tk.X, padx=20, pady=10)
+        main_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw", width=800)
+        main_canvas.configure(yscrollcommand=scrollbar.set)
         
-        # API 配置
-        api_label = tk.Label(
-            settings_frame,
-            text="🔑 API 配置",
-            font=("Microsoft YaHei UI", 12, "bold"),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            anchor="w"
-        )
-        api_label.pack(fill=tk.X, pady=(0, 10))
+        # 鼠标滚轮支持
+        def _on_mousewheel(event):
+            main_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        main_canvas.bind_all("<MouseWheel>", _on_mousewheel)
         
-        # LLM API
-        llm_frame = tk.Frame(settings_frame, bg=ModernStyle.BG_CARD)
-        llm_frame.pack(fill=tk.X, pady=5)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        main_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=30)
         
-        tk.Label(
-            llm_frame,
-            text="LLM API Base:",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            width=15,
-            anchor="e"
-        ).pack(side=tk.LEFT)
+        # ============ 1. 供应商选择 ============
+        section1 = tk.Frame(scrollable_frame, bg=ModernStyle.BG_CARD)
+        section1.pack(fill=tk.X, pady=(0, 25))
         
-        self.setting_llm_base = tk.Entry(
-            llm_frame,
-            font=("Microsoft YaHei UI", 10),
-            width=50,
-            bg=ModernStyle.BG_MAIN,
-            relief="flat",
-            bd=1
-        )
-        self.setting_llm_base.pack(side=tk.LEFT, padx=10, ipady=5)
+        tk.Label(section1, text="模型供应商", font=("Microsoft YaHei UI", 12, "bold"), bg=ModernStyle.BG_CARD).pack(anchor="w", pady=(0, 10))
         
-        # LLM API Key
-        key_frame = tk.Frame(settings_frame, bg=ModernStyle.BG_CARD)
-        key_frame.pack(fill=tk.X, pady=5)
+        prov_b = tk.Frame(section1, bg=ModernStyle.BG_SIDEBAR, padx=20, pady=15)
+        prov_b.pack(fill=tk.X)
         
-        tk.Label(
-            key_frame,
-            text="LLM API Key:",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            width=15,
-            anchor="e"
-        ).pack(side=tk.LEFT)
+        self.provider_var = tk.StringVar(value="OpenAI 兼容")
+        providers = ["OpenAI 兼容", "DeepSeek", "硅基流动", "Ollama 本地", "自定义"]
+        provider_combo = ttk.Combobox(prov_b, textvariable=self.provider_var, values=providers, state="readonly", width=30)
+        provider_combo.pack(side=tk.LEFT)
+        provider_combo.bind("<<ComboboxSelected>>", self._on_provider_change)
         
-        self.setting_llm_key = tk.Entry(
-            key_frame,
-            font=("Microsoft YaHei UI", 10),
-            width=50,
-            bg=ModernStyle.BG_MAIN,
-            relief="flat",
-            bd=1,
-            show="*"
-        )
-        self.setting_llm_key.pack(side=tk.LEFT, padx=10, ipady=5)
+        tk.Label(prov_b, text="💡 切换供应商可自动填充常用 API 地址", font=("Microsoft YaHei UI", 9), bg=ModernStyle.BG_SIDEBAR, fg=ModernStyle.TEXT_SECONDARY).pack(side=tk.LEFT, padx=15)
+        
+        # ============ 2. API 配置 ============
+        section2 = tk.Frame(scrollable_frame, bg=ModernStyle.BG_CARD)
+        section2.pack(fill=tk.X, pady=(0, 25))
+        
+        header2 = tk.Frame(section2, bg=ModernStyle.BG_CARD)
+        header2.pack(fill=tk.X, pady=(0, 10))
+        tk.Label(header2, text="API 配置", font=("Microsoft YaHei UI", 12, "bold"), bg=ModernStyle.BG_CARD).pack(side=tk.LEFT)
+        
+        tk.Button(header2, text="🔗 测试连接", font=("Microsoft YaHei UI", 9), bg=ModernStyle.BG_SIDEBAR, bd=1, relief="solid", padx=10, command=self._test_connection).pack(side=tk.RIGHT)
+        
+        api_b = tk.Frame(section2, bg=ModernStyle.BG_SIDEBAR, padx=20, pady=20)
+        api_b.pack(fill=tk.X)
+        
+        # API Base
+        tk.Label(api_b, text="API 地址:", font=("Microsoft YaHei UI", 10), bg=ModernStyle.BG_SIDEBAR, width=10, anchor="w").grid(row=0, column=0, pady=5)
+        self.setting_llm_base = tk.Entry(api_b, font=("Microsoft YaHei UI", 10), bg=ModernStyle.BG_MAIN, relief="flat", width=50)
+        self.setting_llm_base.grid(row=0, column=1, sticky="we", padx=10, ipady=5)
+        
+        # API Key
+        tk.Label(api_b, text="API 密钥:", font=("Microsoft YaHei UI", 10), bg=ModernStyle.BG_SIDEBAR, width=10, anchor="w").grid(row=1, column=0, pady=5)
+        key_f = tk.Frame(api_b, bg=ModernStyle.BG_SIDEBAR)
+        key_f.grid(row=1, column=1, sticky="we", padx=10)
+        
+        self.setting_llm_key = tk.Entry(key_f, font=("Microsoft YaHei UI", 10), bg=ModernStyle.BG_MAIN, relief="flat", show="•")
+        self.setting_llm_key.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=5)
+        
+        self.show_key = tk.BooleanVar(value=False)
+        tk.Checkbutton(key_f, text="显示", variable=self.show_key, command=self._toggle_key_visibility, bg=ModernStyle.BG_SIDEBAR, font=("Microsoft YaHei UI", 9)).pack(side=tk.LEFT, padx=5)
+        
+        # ============ 3. 模型设置 ============
+        section3 = tk.Frame(scrollable_frame, bg=ModernStyle.BG_CARD)
+        section3.pack(fill=tk.X, pady=(0, 25))
+        
+        tk.Label(section3, text="模型选择", font=("Microsoft YaHei UI", 12, "bold"), bg=ModernStyle.BG_CARD).pack(anchor="w", pady=(0, 10))
+        
+        model_b = tk.Frame(section3, bg=ModernStyle.BG_SIDEBAR, padx=20, pady=20)
+        model_b.pack(fill=tk.X)
         
         # LLM Model
-        model_frame = tk.Frame(settings_frame, bg=ModernStyle.BG_CARD)
-        model_frame.pack(fill=tk.X, pady=5)
+        tk.Label(model_b, text="语言模型 (LLM):", font=("Microsoft YaHei UI", 10), bg=ModernStyle.BG_SIDEBAR, width=15, anchor="w").grid(row=0, column=0, pady=10)
+        self.setting_llm_model = ttk.Combobox(model_b, font=("Microsoft YaHei UI", 10), width=40, values=["gpt-4o", "gpt-4o-mini", "deepseek-chat", "deepseek-coder", "Qwen/Qwen2.5-72B-Instruct"])
+        self.setting_llm_model.grid(row=0, column=1, sticky="w", padx=10)
         
-        tk.Label(
-            model_frame,
-            text="LLM Model:",
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_PRIMARY,
-            width=15,
-            anchor="e"
-        ).pack(side=tk.LEFT)
+        self.llm_status = tk.Label(model_b, text="● 未配置", font=("Microsoft YaHei UI", 9), bg=ModernStyle.BG_SIDEBAR, fg=ModernStyle.WARNING)
+        self.llm_status.grid(row=0, column=2, padx=10)
         
-        self.setting_llm_model = tk.Entry(
-            model_frame,
-            font=("Microsoft YaHei UI", 10),
-            width=50,
-            bg=ModernStyle.BG_MAIN,
-            relief="flat",
-            bd=1
-        )
-        self.setting_llm_model.pack(side=tk.LEFT, padx=10, ipady=5)
+        # Embedding Model
+        tk.Label(model_b, text="嵌入模型 (Embed):", font=("Microsoft YaHei UI", 10), bg=ModernStyle.BG_SIDEBAR, width=15, anchor="w").grid(row=1, column=0, pady=10)
+        self.setting_embed_model = ttk.Combobox(model_b, font=("Microsoft YaHei UI", 10), width=40, values=["text-embedding-3-small", "text-embedding-3-large", "BAAI/bge-m3"])
+        self.setting_embed_model.grid(row=1, column=1, sticky="w", padx=10)
         
-        # 保存按钮
-        save_btn = tk.Button(
-            settings_frame,
-            text="💾 保存设置",
-            font=("Microsoft YaHei UI", 11),
-            bg=ModernStyle.SUCCESS,
-            fg=ModernStyle.TEXT_LIGHT,
-            activebackground="#38a169",
-            bd=0,
-            cursor="hand2",
-            padx=25,
-            pady=10,
-            command=self._save_settings
-        )
-        save_btn.pack(pady=20)
+        self.use_same_api = tk.BooleanVar(value=True)
+        tk.Checkbutton(model_b, text="使用同一 API", variable=self.use_same_api, command=self._toggle_embed_api, bg=ModernStyle.BG_SIDEBAR, font=("Microsoft YaHei UI", 9)).grid(row=1, column=2, padx=10)
         
-        # 使用说明
-        help_text = """
-📚 使用说明
-
-1. 论文诊断：上传 PDF/Word 文件或粘贴文本，获取多维度诊断报告
-2. 深度优化：选择优化阶段和目标期刊，对论文各部分进行优化
-3. 降重降AI：输入文本，选择处理方式，获取改写后的内容
-4. 学术搜索：搜索 Google Scholar 或知网文献
-5. 退修助手：粘贴审稿意见，生成回应策略和回应信
-
-⚠️ 注意事项
-- 所有论文内容仅在本地处理，通过配置的 API 进行 LLM 调用
-- 长文档会自动分段处理
-- 建议配置 API 密钥后使用完整功能
-        """
+        # 独立 Embedding API (默认隐藏)
+        self.embed_api_frame = tk.Frame(section3, bg="#F9F9FB", padx=20, pady=15)
         
-        help_label = tk.Label(
-            page,
-            text=help_text,
-            font=("Microsoft YaHei UI", 10),
-            bg=ModernStyle.BG_CARD,
-            fg=ModernStyle.TEXT_SECONDARY,
-            justify=tk.LEFT,
-            anchor="nw"
-        )
-        help_label.pack(fill=tk.X, padx=20, pady=20)
+        tk.Label(self.embed_api_frame, text="独立嵌入 API 地址:", font=("Microsoft YaHei UI", 9), bg="#F9F9FB").grid(row=0, column=0, pady=5, sticky="w")
+        self.setting_embed_base = tk.Entry(self.embed_api_frame, font=("Microsoft YaHei UI", 9), bg=ModernStyle.BG_MAIN, relief="flat", width=45)
+        self.setting_embed_base.grid(row=0, column=1, padx=10, ipady=3)
+        
+        tk.Label(self.embed_api_frame, text="独立嵌入 API 密钥:", font=("Microsoft YaHei UI", 9), bg="#F9F9FB").grid(row=1, column=0, pady=5, sticky="w")
+        self.setting_embed_key = tk.Entry(self.embed_api_frame, font=("Microsoft YaHei UI", 9), bg=ModernStyle.BG_MAIN, relief="flat", width=45, show="•")
+        self.setting_embed_key.grid(row=1, column=1, padx=10, ipady=3)
+        
+        # ============ 4. 操作按钮 ============
+        btn_b = tk.Frame(scrollable_frame, bg=ModernStyle.BG_CARD)
+        btn_b.pack(fill=tk.X, pady=20)
+        
+        tk.Button(btn_b, text="保存配置", font=("Microsoft YaHei UI", 11, "bold"), bg=ModernStyle.PRIMARY, fg="white", bd=0, padx=40, pady=12, cursor="hand2", command=self._save_settings).pack(side=tk.LEFT)
+        tk.Button(btn_b, text="恢复默认", font=("Microsoft YaHei UI", 10), bg=ModernStyle.BG_SIDEBAR, bd=0, padx=20, pady=12, cursor="hand2", command=self._reset_settings).pack(side=tk.LEFT, padx=15)
         
         # 加载现有设置
         self._load_settings()
+    
+    def _on_provider_change(self, event=None):
+        """切换供应商时自动填充默认值"""
+        provider = self.provider_var.get()
+        
+        presets = {
+            "OpenAI 兼容": ("https://api.openai.com/v1", "gpt-4o-mini", "text-embedding-3-small"),
+            "DeepSeek": ("https://api.deepseek.com/v1", "deepseek-chat", "text-embedding-3-small"),
+            "硅基流动": ("https://api.siliconflow.cn/v1", "Qwen/Qwen2.5-72B-Instruct", "BAAI/bge-m3"),
+            "Ollama 本地": ("http://localhost:11434/v1", "llama3.2", "nomic-embed-text"),
+            "自定义": ("", "", ""),
+        }
+        
+        if provider in presets:
+            base, model, embed = presets[provider]
+            self.setting_llm_base.delete(0, tk.END)
+            self.setting_llm_base.insert(0, base)
+            self.setting_llm_model.set(model)
+            self.setting_embed_model.set(embed)
+    
+    def _toggle_key_visibility(self):
+        """切换密钥显示/隐藏"""
+        if self.show_key.get():
+            self.setting_llm_key.config(show="")
+        else:
+            self.setting_llm_key.config(show="•")
+    
+    def _toggle_embed_api(self):
+        """切换嵌入模型独立API配置显示"""
+        if self.use_same_api.get():
+            self.embed_api_frame.pack_forget()
+        else:
+            self.embed_api_frame.pack(fill=tk.X, padx=15, pady=5)
+    
+    def _test_connection(self):
+        """测试 API 连接"""
+        api_base = self.setting_llm_base.get().strip()
+        api_key = self.setting_llm_key.get().strip()
+        model = self.setting_llm_model.get().strip()
+        
+        if not api_base or not api_key:
+            messagebox.showwarning("提示", "请先填写 API 地址和密钥")
+            return
+        
+        def do_test():
+            try:
+                from openai import OpenAI
+                client = OpenAI(base_url=api_base, api_key=api_key)
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": "Hi"}],
+                    max_tokens=5
+                )
+                self.root.after(0, lambda: self._update_status(True))
+                self.root.after(0, lambda: messagebox.showinfo("成功", "✅ 连接成功！API 配置有效。"))
+            except Exception as e:
+                self.root.after(0, lambda: self._update_status(False))
+                self.root.after(0, lambda: messagebox.showerror("失败", f"❌ 连接失败:\n{str(e)}"))
+        
+        self._run_in_thread(do_test)
+    
+    def _update_status(self, success: bool):
+        """更新状态显示"""
+        if success:
+            self.llm_status.config(text="● 已连接", fg=ModernStyle.SUCCESS)
+        else:
+            self.llm_status.config(text="● 连接失败", fg=ModernStyle.ERROR)
+    
+    def _reset_settings(self):
+        """重置设置"""
+        if messagebox.askyesno("确认", "确定要重置所有设置吗？"):
+            self.setting_llm_base.delete(0, tk.END)
+            self.setting_llm_key.delete(0, tk.END)
+            self.setting_llm_model.set("")
+            self.setting_embed_base.delete(0, tk.END)
+            self.setting_embed_key.delete(0, tk.END)
+            self.setting_embed_model.set("")
+            self.provider_var.set("OpenAI 兼容")
+            self.llm_status.config(text="● 未配置", fg=ModernStyle.WARNING)
         
     # ==================== 功能方法 ====================
     
@@ -1301,7 +1080,7 @@ class EconPaperApp:
                 from engines.dedup import DedupEngine
                 
                 engine = DedupEngine()
-                result = engine.process(text, strength=strength, preserve_terms=terms)
+                result = engine.process(text, strength=int(strength), preserve_terms=terms)
                 
                 report = engine.get_dedup_report(result)
                 
@@ -1375,7 +1154,7 @@ class EconPaperApp:
                 
                 # 先降重
                 dedup_engine = DedupEngine()
-                dedup_result = dedup_engine.process(text, strength=strength, preserve_terms=terms)
+                dedup_result = dedup_engine.process(text, strength=int(strength), preserve_terms=terms)
                 
                 # 再降AI
                 deai_engine = DeAIEngine()
@@ -1468,9 +1247,21 @@ class EconPaperApp:
         """加载设置"""
         try:
             from config.settings import settings
+            self.setting_llm_base.delete(0, tk.END)
             self.setting_llm_base.insert(0, settings.llm_api_base or "")
+            self.setting_llm_key.delete(0, tk.END)
             self.setting_llm_key.insert(0, settings.llm_api_key or "")
-            self.setting_llm_model.insert(0, settings.llm_model or "")
+            self.setting_llm_model.set(settings.llm_model or "gpt-4o-mini")
+            
+            self.setting_embed_base.delete(0, tk.END)
+            self.setting_embed_base.insert(0, settings.embedding_api_base or "")
+            self.setting_embed_key.delete(0, tk.END)
+            self.setting_embed_key.insert(0, settings.embedding_api_key or "")
+            self.setting_embed_model.set(settings.embedding_model or "text-embedding-3-small")
+            
+            # 更新状态
+            if settings.llm_api_key:
+                self.llm_status.config(text="● 已配置", fg=ModernStyle.SUCCESS)
         except Exception:
             pass
     
@@ -1479,15 +1270,33 @@ class EconPaperApp:
         try:
             env_path = BASE_DIR / ".env"
             
-            lines = []
-            lines.append(f"LLM_API_BASE={self.setting_llm_base.get()}")
-            lines.append(f"LLM_API_KEY={self.setting_llm_key.get()}")
-            lines.append(f"LLM_MODEL={self.setting_llm_model.get()}")
+            # 获取嵌入模型配置
+            if self.use_same_api.get():
+                embed_base = self.setting_llm_base.get()
+                embed_key = self.setting_llm_key.get()
+            else:
+                embed_base = self.setting_embed_base.get()
+                embed_key = self.setting_embed_key.get()
+            
+            lines = [
+                f"# EconPaper Pro 配置",
+                f"",
+                f"# LLM 配置",
+                f"LLM_API_BASE={self.setting_llm_base.get()}",
+                f"LLM_API_KEY={self.setting_llm_key.get()}",
+                f"LLM_MODEL={self.setting_llm_model.get()}",
+                f"",
+                f"# 嵌入模型配置",
+                f"EMBEDDING_API_BASE={embed_base}",
+                f"EMBEDDING_API_KEY={embed_key}",
+                f"EMBEDDING_MODEL={self.setting_embed_model.get()}",
+            ]
             
             with open(env_path, "w", encoding="utf-8") as f:
                 f.write("\n".join(lines))
             
-            messagebox.showinfo("成功", "设置已保存！请重启应用生效。")
+            self.llm_status.config(text="● 已配置", fg=ModernStyle.SUCCESS)
+            messagebox.showinfo("成功", "✅ 配置已保存！\n\n部分设置需要重启应用生效。")
             
         except Exception as e:
             messagebox.showerror("错误", f"保存失败: {e}")
