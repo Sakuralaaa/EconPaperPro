@@ -18,6 +18,10 @@ env:
   PYTHON_VERSION: '3.11'
   APP_NAME: 'EconPaperPro'
 
+# 添加权限配置，允许创建 Release
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     runs-on: windows-latest
