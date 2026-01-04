@@ -93,7 +93,7 @@ class SetupWizard:
         # 创建主窗口
         self.root = tk.Tk()
         self.root.title("EconPaper Pro - 初始设置")
-        self.root.geometry("550x450")
+        self.root.geometry("600x520")
         self.root.resizable(False, False)
         
         # 居中显示
