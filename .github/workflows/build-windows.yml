@@ -1,182 +1,59 @@
-# GitHub Actions 工作流 - Windows 打包
-# 自动构建 EconPaper Pro Windows 可执行文件
-
 name: Build Windows Application
 
 on:
   push:
     tags:
-      - 'v*'  # 当推送以 v 开头的标签时触发（如 v1.0.0）
-  workflow_dispatch:  # 支持手动触发
-    inputs:
-      version:
-        description: '版本号 (如 1.0.0)'
-        required: true
-        default: '1.0.0'
+      - 'v*'
+  workflow_dispatch:
 
-env:
-  PYTHON_VERSION: '3.11'
-  APP_NAME: 'EconPaperPro'
-
-# 添加权限配置，允许创建 Release
 permissions:
   contents: write
 
 jobs:
-  build-windows:
+  build:
     runs-on: windows-latest
     
     steps:
-      # 1. 检出代码
-      - name: 检出代码
-        uses: actions/checkout@v4
-      
-      # 2. 设置 Python 环境
-      - name: 设置 Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-      
-      # 3. 获取版本号
-      - name: 获取版本号
-        id: get_version
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          fi
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "构建版本: $VERSION"
-      
-      # 4. 安装依赖
-      - name: 安装依赖
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller pywebview
-      
-      # 5. 显示版本信息
-      - name: 显示版本信息
-        run: |
-          echo "构建版本: ${{ steps.get_version.outputs.VERSION }}"
-      
-      # 6. 运行 PyInstaller 打包
-      - name: 打包应用
-        run: |
-          pyinstaller --clean econpaper.spec
-      
-      # 7. 创建发布包
-      - name: 创建发布包
-        shell: bash
-        run: |
-          VERSION="${{ steps.get_version.outputs.VERSION }}"
-          RELEASE_NAME="${{ env.APP_NAME }}-v${VERSION}-windows-x64"
-          
-          # 创建发布目录
-          mkdir -p "release/${RELEASE_NAME}"
-          
-          # 复制打包文件
-          cp -r dist/EconPaperPro/* "release/${RELEASE_NAME}/"
-          
-          # 复制配置文件模板
-          if [ -f ".env.example" ]; then
-            cp .env.example "release/${RELEASE_NAME}/.env.example"
-          fi
-          
-          # 复制说明文档
-          if [ -f "README.md" ]; then
-            cp README.md "release/${RELEASE_NAME}/"
-          fi
-          
-          # 创建快速启动脚本
-          echo '@echo off
-          echo Starting EconPaper Pro...
-          start "" "%~dp0EconPaperPro.exe"
-          ' > "release/${RELEASE_NAME}/启动.bat"
-          
-          # 压缩
-          cd release
-          7z a -tzip "${RELEASE_NAME}.zip" "${RELEASE_NAME}"
-          
-          echo "发布包已创建: ${RELEASE_NAME}.zip"
-      
-      # 8. 上传构建产物
-      - name: 上传构建产物
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_NAME }}-v${{ steps.get_version.outputs.VERSION }}-windows-x64
-          path: release/*.zip
-          retention-days: 30
-      
-      # 9. 创建 GitHub Release（仅当推送标签时）
-      - name: 创建 GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          name: EconPaper Pro v${{ steps.get_version.outputs.VERSION }}
-          body: |
-            ## EconPaper Pro v${{ steps.get_version.outputs.VERSION }}
-            
-            ### 📦 下载说明
-            1. 下载 `EconPaperPro-v${{ steps.get_version.outputs.VERSION }}-windows-x64.zip`
-            2. 解压到任意目录
-            3. 双击 `启动.bat` 或 `EconPaperPro.exe` 运行
-            
-            ### ⚙️ 首次使用
-            1. 首次运行时会弹出设置向导
-            2. 选择数据存储目录和工作区目录
-            3. 在应用中配置 API Key
-            
-            ### 📝 更新日志
-            - 查看 CHANGELOG.md 了解详细更新内容
-          files: |
-            release/*.zip
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # 可选：构建便携版（单文件）
-  build-portable:
-    runs-on: windows-latest
+    - name: Checkout code
+      uses: actions/checkout@v4
     
-    steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-      
-      - name: 设置 Python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
-      
-      - name: 获取版本号
-        id: get_version
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
-          else
-            VERSION="${GITHUB_REF#refs/tags/v}"
-          fi
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-      
-      - name: 安装依赖
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller pywebview
-      
-      - name: 打包单文件版本
-        run: |
-          pyinstaller --onefile --name EconPaperPro-Portable --console main.py
-      
-      - name: 上传便携版
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.APP_NAME }}-v${{ steps.get_version.outputs.VERSION }}-portable
-          path: dist/EconPaperPro-Portable.exe
-          retention-days: 30
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        pip install openai httpx pydantic pydantic-settings python-dotenv
+        pip install pypdf python-docx
+    
+    - name: Build with PyInstaller
+      run: |
+        cd .
+        pyinstaller econpaper.spec --noconfirm
+      shell: cmd
+    
+    - name: Create ZIP archive
+      run: |
+        Compress-Archive -Path "dist/EconPaperPro/*" -DestinationPath "EconPaperPro-Windows.zip"
+      shell: pwsh
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: EconPaperPro-Windows
+        path: EconPaperPro-Windows.zip
+    
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: EconPaperPro-Windows.zip
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

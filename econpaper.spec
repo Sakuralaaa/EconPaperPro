@@ -1,118 +1,52 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-EconPaper Pro - PyInstaller 打包配置
+EconPaper Pro - PyInstaller Packaging Configuration
 
-用于将应用打包为 Windows 可执行文件（无控制台窗口）
+Native tkinter GUI application - no browser required
 """
 
 import os
 import sys
 from pathlib import Path
 
-# 获取项目根目录
+# Get project root directory
 SPEC_DIR = os.path.dirname(os.path.abspath(SPEC))
 PROJECT_DIR = SPEC_DIR
 
-# 应用信息
+# Application info
 APP_NAME = 'EconPaper Pro'
-APP_VERSION = '1.0.0'
-APP_ICON = None  # 可以设置为 'assets/icon.ico'
+APP_VERSION = '2.0.0'
+APP_ICON = None  # Can be set to 'assets/icon.ico'
 
-# 收集数据文件
+# Collect data files
 datas = [
-    # 范例数据
+    # Example data
     (os.path.join(PROJECT_DIR, 'data', 'exemplars'), 'data/exemplars'),
-    # 提示词模板
+    # Prompt templates
     (os.path.join(PROJECT_DIR, 'prompts'), 'prompts'),
-    # 配置文件模板
+    # Configuration template
     (os.path.join(PROJECT_DIR, '.env.example'), '.'),
 ]
 
-# 过滤不存在的数据文件
+# Filter non-existent data files
 datas = [(src, dst) for src, dst in datas if os.path.exists(src)]
 
-# 使用 PyInstaller 的 collect_data_files 收集包数据
-from PyInstaller.utils.hooks import collect_data_files, collect_all
-
-# 收集 Gradio 相关包的数据文件
-packages_to_collect = [
-    'gradio',
-    'gradio_client',
-    'safehttpx',
-    'huggingface_hub',
-    'starlette',
-    'uvicorn',
-    'httpcore',
-    'httpx',
-    'anyio',
-]
-
-for pkg in packages_to_collect:
-    try:
-        pkg_datas = collect_data_files(pkg)
-        if pkg_datas:
-            datas.extend(pkg_datas)
-            print(f"Collected {pkg} data files: {len(pkg_datas)}")
-    except Exception as e:
-        print(f"Warning: Cannot collect {pkg} data: {e}")
-
-# 隐式导入的模块 - 完整列表确保所有依赖被包含
+# Hidden imports - minimal set for native tkinter app
 hiddenimports = [
-    # ========== PyWebView (桌面窗口) ==========
-    'webview',
-    'webview.platforms',
-    'webview.platforms.winforms',
-    'webview.platforms.edgechromium',
-    'webview.platforms.cef',
-    'clr',
-    'clr_loader',
-    'pythonnet',
+    # ========== tkinter (native GUI) ==========
+    'tkinter',
+    'tkinter.ttk',
+    'tkinter.filedialog',
+    'tkinter.messagebox',
+    'tkinter.scrolledtext',
     
-    # ========== Gradio 及其依赖 ==========
-    'gradio',
-    'gradio.themes',
-    'gradio.themes.base',
-    'gradio.themes.soft',
-    'gradio.components',
-    'gradio.blocks',
-    'gradio.interface',
-    'gradio.layouts',
-    'gradio.routes',
-    'gradio.utils',
-    'gradio.processing_utils',
-    'gradio.networking',
-    'gradio_client',
-    'gradio_client.utils',
+    # ========== OpenAI ==========
+    'openai',
+    'openai.resources',
+    'openai._client',
+    'openai.types',
     
-    # ========== FastAPI / Starlette / Uvicorn ==========
-    'fastapi',
-    'fastapi.applications',
-    'fastapi.routing',
-    'fastapi.middleware',
-    'starlette',
-    'starlette.applications',
-    'starlette.routing',
-    'starlette.middleware',
-    'starlette.responses',
-    'starlette.requests',
-    'starlette.staticfiles',
-    'starlette.templating',
-    'starlette.websockets',
-    'uvicorn',
-    'uvicorn.main',
-    'uvicorn.config',
-    'uvicorn.lifespan',
-    'uvicorn.lifespan.on',
-    'uvicorn.protocols',
-    'uvicorn.protocols.http',
-    'uvicorn.protocols.http.auto',
-    'uvicorn.protocols.http.h11_impl',
-    'uvicorn.protocols.websockets',
-    'uvicorn.protocols.websockets.auto',
-    'uvicorn.loops',
-    'uvicorn.loops.auto',
-    
-    # ========== HTTP / 网络 ==========
+    # ========== HTTP ==========
     'httpx',
     'httpx._transports',
     'httpx._transports.default',
@@ -122,24 +56,6 @@ hiddenimports = [
     'anyio._backends',
     'anyio._backends._asyncio',
     'sniffio',
-    'websockets',
-    'websockets.legacy',
-    'websockets.legacy.server',
-    
-    # ========== OpenAI ==========
-    'openai',
-    'openai.resources',
-    'openai._client',
-    'openai.types',
-    
-    # ========== ChromaDB ==========
-    'chromadb',
-    'chromadb.config',
-    'chromadb.api',
-    'chromadb.db',
-    'chromadb.segment',
-    'onnxruntime',
-    'tokenizers',
     
     # ========== Pydantic ==========
     'pydantic',
@@ -148,56 +64,90 @@ hiddenimports = [
     'pydantic_settings',
     'pydantic_core',
     
-    # ========== 其他依赖 ==========
-    'aiofiles',
-    'python_multipart',
-    'multipart',
-    'jinja2',
-    'markupsafe',
-    'orjson',
+    # ========== Document Parsing ==========
+    'pypdf',
+    'docx',
+    'python-docx',
+    
+    # ========== Other Dependencies ==========
+    'dotenv',
+    'python-dotenv',
     'typing_extensions',
     'annotated_types',
     'packaging',
-    'pillow',
-    'PIL',
-    'PIL.Image',
     
-    # ========== tkinter (设置向导) ==========
-    'tkinter',
-    'tkinter.ttk',
-    'tkinter.filedialog',
-    'tkinter.messagebox',
-    
-    # ========== 项目模块 ==========
+    # ========== Project Modules ==========
     'config',
     'config.settings',
     'core',
     'core.llm',
-    'core.embedding',
-    'core.knowledge_base',
-    'core.optimizer',
-    'core.logger',
+    'core.embeddings',
     'core.exceptions',
+    'core.logger',
+    'core.prompts',
+    'agents',
+    'agents.master',
+    'agents.diagnostic',
+    'agents.optimizer',
+    'agents.revision',
+    'agents.tools',
+    'engines',
+    'engines.dedup',
+    'engines.deai',
+    'engines.similarity',
+    'parsers',
+    'parsers.pdf_parser',
+    'parsers.docx_parser',
+    'parsers.structure',
+    'knowledge',
+    'knowledge.exemplars',
+    'knowledge.vector_store',
+    'knowledge.search',
+    'knowledge.search.google_scholar',
+    'knowledge.search.cnki',
     'ui',
-    'ui.app',
-    'ui.components',
-    'launcher',
+    'ui.native_app',
+    'utils',
+    'utils.diff',
+    'utils.text',
     
-    # ========== Python 标准库 ==========
+    # ========== Python Standard Library ==========
     'json',
-    'webbrowser',
     'traceback',
     'datetime',
     'pathlib',
     'logging',
     'logging.handlers',
+    'threading',
+    'ctypes',
 ]
 
-# 排除的模块（减小包体积）
+# Excluded modules (reduce package size)
 excludes = [
+    # Web frameworks (not needed for native app)
+    'gradio',
+    'gradio_client',
+    'fastapi',
+    'starlette',
+    'uvicorn',
+    'websockets',
+    'webview',
+    'pywebview',
+    
+    # Heavy ML libraries
+    'torch',
+    'tensorflow',
+    'transformers',
+    'chromadb',
+    'onnxruntime',
+    
+    # Visualization
     'matplotlib',
     'scipy',
+    'pandas',
     'numpy.testing',
+    
+    # Development tools
     'pytest',
     'setuptools',
     'pip',
@@ -205,9 +155,14 @@ excludes = [
     'black',
     'isort',
     'mypy',
+    
+    # Other large packages
+    'PIL',
+    'pillow',
+    'jinja2',
 ]
 
-# 分析配置
+# Analysis configuration
 a = Analysis(
     [os.path.join(PROJECT_DIR, 'main.py')],
     pathex=[PROJECT_DIR],
@@ -221,10 +176,10 @@ a = Analysis(
     noarchive=False,
 )
 
-# 清理重复文件
+# Remove duplicate files
 pyz = PYZ(a.pure, a.zipped_data)
 
-# 主程序 EXE - 隐藏控制台窗口
+# Main EXE - hide console window
 exe = EXE(
     pyz,
     a.scripts,
@@ -235,7 +190,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,  # ★ 隐藏控制台窗口，显示为纯 GUI 应用
+    console=False,  # Hide console window, pure GUI app
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -245,7 +200,7 @@ exe = EXE(
     version_info=None,
 )
 
-# 收集所有文件
+# Collect all files
 coll = COLLECT(
     exe,
     a.binaries,
