@@ -12,7 +12,7 @@ EconPaper Pro - 原生 Tkinter GUI 应用 (v2.3用户体验优化版)
 - 关于页面
 """
 
-VERSION = "0.4.2"
+VERSION = "0.4.3"
 
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
@@ -1109,11 +1109,11 @@ class EconPaperApp:
         paned.add(right_panel, minsize=350)
         
     def _create_search_page(self):
-        """创建学术搜索页面 - 增强版：LLM辅助检索"""
+        """创建学术搜索页面 - v2.0 多数据源学术检索"""
         page = tk.Frame(self.content_frame, bg=ModernStyle.BG_MAIN)
         self.pages["search"] = page
         
-        self._create_page_header(page, "学术搜索", "AI辅助文献检索 -覆盖中英文数据库")
+        self._create_page_header(page, "学术搜索", "中英文学术文献检索 - 支持多数据源")
         
         self.progress_indicators["search"] = ProgressIndicator(page, "正在搜索文献...")
         
@@ -1140,7 +1140,10 @@ class EconPaperApp:
             width=40
         )
         self.search_query.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=6)
-        self.search_query.insert(0, "数字经济 企业创新")
+        self.search_query.insert(0, "digital economy innovation")
+        
+        # 绑定回车键搜索
+        self.search_query.bind("<Return>", lambda e: self._run_search())
         
         # AI辅助按钮
         ModernButton(
@@ -1153,11 +1156,12 @@ class EconPaperApp:
             hover_color=ModernStyle.INFO
         ).pack(side=tk.LEFT, padx=12)
         
-        self.search_source = tk.StringVar(value="全部")
+        # 数据源选择 - 中英文双语支持
+        self.search_source = tk.StringVar(value="英文文献")
         source_combo = ttk.Combobox(
             search_frame,
             textvariable=self.search_source,
-            values=["全部", "Google Scholar", "知网 CNKI"],
+            values=["英文文献", "中文文献", "Semantic Scholar", "OpenAlex", "百度学术"],
             state="readonly",
             width=14,
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
@@ -1172,54 +1176,23 @@ class EconPaperApp:
             height=40
         ).pack(side=tk.LEFT)
         
-        # 筛选选项
+        # 筛选选项行1
         filter_frame = tk.Frame(content, bg=ModernStyle.BG_SECONDARY, padx=22, pady=12)
-        filter_frame.pack(fill=tk.X, pady=(0, 22))
+        filter_frame.pack(fill=tk.X, pady=(0, 8))
         
-        self.enable_ai_filter = tk.BooleanVar(value=True)
-        tk.Checkbutton(
-            filter_frame,
-            text="✨ AI智能筛选",
-            variable=self.enable_ai_filter,
-            bg=ModernStyle.BG_SECONDARY,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
-        ).pack(side=tk.LEFT, padx=12)
-        
-        tk.Label(
-            filter_frame,
-            text="🔑 Google认证:",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
-            bg=ModernStyle.BG_SECONDARY,
-            fg=ModernStyle.TEXT_PRIMARY
-        ).pack(side=tk.LEFT, padx=(10, 8))
-        
-        self.gs_auth_btn = tk.Button(
-            filter_frame,
-            text="去认证",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
-            bg=ModernStyle.BG_MAIN,
-            bd=1,
-            relief="solid",
-            padx=10,
-            command=self._run_gs_auth
-        )
-        self.gs_auth_btn.pack(side=tk.LEFT, padx=5)
-        
-        self._check_gs_auth_status()
-
         tk.Label(
             filter_frame,
             text="结果数量:",
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY
-        ).pack(side=tk.LEFT, padx=(20, 8))
+        ).pack(side=tk.LEFT, padx=(0, 8))
         
         self.search_limit = tk.Scale(
             filter_frame,
-            from_=5, to=30,
+            from_=5, to=50,
             orient=tk.HORIZONTAL,
-            length=120,
+            length=100,
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY,
             highlightthickness=0,
@@ -1230,15 +1203,43 @@ class EconPaperApp:
         self.search_limit.set(15)
         self.search_limit.pack(side=tk.LEFT, padx=8)
         
+        # 年份筛选
         tk.Label(
             filter_frame,
-            text="💡 启用AI筛选可从大量结果中智能选出最相关的文献",
+            text="起始年份:",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_PRIMARY
+        ).pack(side=tk.LEFT, padx=(15, 8))
+        
+        self.search_year_from = tk.Entry(
+            filter_frame,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            width=6,
+            bg=ModernStyle.BG_MAIN,
+            relief="flat"
+        )
+        self.search_year_from.pack(side=tk.LEFT, ipady=4)
+        self.search_year_from.insert(0, "2020")
+        
+        self.enable_ai_filter = tk.BooleanVar(value=False)
+        tk.Checkbutton(
+            filter_frame,
+            text="✨ AI智能筛选",
+            variable=self.enable_ai_filter,
+            bg=ModernStyle.BG_SECONDARY,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
+        ).pack(side=tk.LEFT, padx=(20, 8))
+        
+        tk.Label(
+            filter_frame,
+            text="💡 英文文献用英文关键词，中文文献用中文关键词",
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_MUTED
-        ).pack(side=tk.LEFT, padx=18)
+        ).pack(side=tk.RIGHT, padx=12)
         
-        # 期刊级别筛选
+        # 期刊级别筛选行2
         quality_frame = tk.Frame(content, bg=ModernStyle.BG_SECONDARY, padx=22, pady=12)
         quality_frame.pack(fill=tk.X, pady=(0, 15))
         
@@ -1250,7 +1251,7 @@ class EconPaperApp:
             fg=ModernStyle.TEXT_PRIMARY
         ).pack(side=tk.LEFT, padx=(0, 12))
         
-        self.filter_cssci = tk.BooleanVar(value=True)
+        self.filter_cssci = tk.BooleanVar(value=False)
         tk.Checkbutton(
             quality_frame,
             text="仅CSSCI/北核",
@@ -1259,7 +1260,7 @@ class EconPaperApp:
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
         ).pack(side=tk.LEFT, padx=8)
         
-        self.filter_ssci = tk.BooleanVar(value=True)
+        self.filter_ssci = tk.BooleanVar(value=False)
         tk.Checkbutton(
             quality_frame,
             text="仅SSCI Q1/Q2",
@@ -1279,19 +1280,73 @@ class EconPaperApp:
         
         tk.Label(
             quality_frame,
-            text="(使用 Easy Scholar 查询)",
+            text="(基于内置期刊数据库，覆盖经管类核心期刊)",
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_MUTED
         ).pack(side=tk.LEFT, padx=12)
         
-        # 结果区
+        # 功能按钮区
+        action_frame = tk.Frame(content, bg=ModernStyle.BG_SECONDARY, padx=22, pady=12)
+        action_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        ModernButton(
+            action_frame,
+            text="📝 生成文献综述",
+            command=self._generate_literature_review,
+            width=140,
+            height=38,
+            bg_color=ModernStyle.SUCCESS,
+            hover_color=ModernStyle.SUCCESS
+        ).pack(side=tk.LEFT, padx=8)
+        
+        ModernButton(
+            action_frame,
+            text="📋 生成引用格式",
+            command=self._generate_citations,
+            width=140,
+            height=38,
+            bg_color=ModernStyle.INFO,
+            hover_color=ModernStyle.INFO
+        ).pack(side=tk.LEFT, padx=8)
+        
+        ModernButton(
+            action_frame,
+            text="📥 导出结果",
+            command=lambda: self._export_result(self.search_result.get("1.0", tk.END), "搜索结果"),
+            width=110,
+            height=38,
+            bg_color=ModernStyle.TEXT_SECONDARY,
+            hover_color=ModernStyle.TEXT_SECONDARY
+        ).pack(side=tk.LEFT, padx=8)
+        
         tk.Label(
-            content,
+            action_frame,
+            text="📊 英文：Semantic Scholar + OpenAlex | 中文：百度学术 + 万方数据",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_MUTED
+        ).pack(side=tk.RIGHT, padx=12)
+        
+        # 结果区
+        result_header = tk.Frame(content, bg=ModernStyle.BG_MAIN)
+        result_header.pack(fill=tk.X, pady=(0, 10))
+        
+        tk.Label(
+            result_header,
             text="搜索结果",
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_MAIN
-        ).pack(anchor="w", pady=(0, 10))
+        ).pack(side=tk.LEFT)
+        
+        self.search_status_label = tk.Label(
+            result_header,
+            text="",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+            bg=ModernStyle.BG_MAIN,
+            fg=ModernStyle.TEXT_MUTED
+        )
+        self.search_status_label.pack(side=tk.RIGHT)
         
         result_container, self.search_result = self._create_text_output(content)
         result_container.pack(fill=tk.BOTH, expand=True)
@@ -2734,7 +2789,7 @@ class EconPaperApp:
         self._run_in_thread(do_expand)
     
     def _run_search(self):
-        """运行学术搜索 - 整合版：支持多数据源 + AI筛选"""
+        """运行学术搜索 - v2.0 使用可靠的学术API"""
         query = self.search_query.get().strip()
         if not query:
             messagebox.showwarning("提示", "请输入搜索关键词")
@@ -2744,27 +2799,33 @@ class EconPaperApp:
         limit = int(self.search_limit.get()) if hasattr(self, 'search_limit') else 15
         enable_ai = self.enable_ai_filter.get() if hasattr(self, 'enable_ai_filter') else False
         
+        # 获取年份筛选
+        year_from = None
+        try:
+            year_str = self.search_year_from.get().strip()
+            if year_str:
+                year_from = int(year_str)
+        except (ValueError, AttributeError):
+            pass
+        
         self.progress_indicators["search"].start(f"正在搜索 {source}...")
         self._set_result(self.search_result, "")
+        self._safe_update(lambda: self.search_status_label.config(text="搜索中..."))
         
         def do_search():
             try:
                 all_results = []
-                
-                # 获取期刊级别筛选设置
-                filter_cssci = self.filter_cssci.get() if hasattr(self, 'filter_cssci') else True
-                filter_ssci = self.filter_ssci.get() if hasattr(self, 'filter_ssci') else True
-                show_rank = self.show_rank_info.get() if hasattr(self, 'show_rank_info') else True
+                errors = []
                 
                 # 根据选择的来源搜索
-                if source in ["全部", "Google Scholar"]:
-                    self._safe_update(lambda: self.progress_indicators["search"].update_text("正在搜索 Google Scholar..."))
+                # 英文文献数据源
+                if source in ["英文文献", "Semantic Scholar"]:
+                    self._safe_update(lambda: self.progress_indicators["search"].update_text("正在搜索 Semantic Scholar..."))
                     try:
-                        from knowledge.search.google_scholar import search_google_scholar
-                        gs_results = search_google_scholar(query, limit=limit * 2)  # 多抓取以供筛选
+                        from knowledge.search.semantic_scholar import search_semantic_scholar
+                        ss_results = search_semantic_scholar(query, limit=limit, year_from=year_from)
                         
-                        gs_papers = []
-                        for r in gs_results:
+                        for r in ss_results:
                             paper = {
                                 'title': r.title,
                                 'authors': r.authors,
@@ -2772,28 +2833,48 @@ class EconPaperApp:
                                 'abstract': r.abstract,
                                 'url': r.link,
                                 'citations': r.citations,
-                                'journal': getattr(r, 'source', ''),
-                                'source': 'Google Scholar'
+                                'journal': r.venue,
+                                'doi': r.doi,
+                                'source': 'Semantic Scholar'
                             }
-                            gs_papers.append(paper)
-                        
-                        # 期刊级别筛选
-                        if filter_ssci and gs_papers:
-                            self._safe_update(lambda: self.progress_indicators["search"].update_text("正在查询期刊级别..."))
-                            gs_papers = self._filter_by_journal_rank(gs_papers, "english", show_rank)
-                        
-                        all_results.extend(gs_papers)
+                            all_results.append(paper)
                         
                     except Exception as e:
-                        print(f"Google Scholar 搜索失败: {e}")
+                        errors.append(f"Semantic Scholar: {e}")
+                        print(f"Semantic Scholar 搜索失败: {e}")
                 
-                if source in ["全部", "知网 CNKI"]:
-                    self._safe_update(lambda: self.progress_indicators["search"].update_text("正在搜索知网..."))
+                if source in ["英文文献", "OpenAlex"]:
+                    self._safe_update(lambda: self.progress_indicators["search"].update_text("正在搜索 OpenAlex..."))
+                    try:
+                        from knowledge.search.openalex import search_openalex
+                        oa_results = search_openalex(query, limit=limit, year_from=year_from)
+                        
+                        for r in oa_results:
+                            paper = {
+                                'title': r.title,
+                                'authors': r.authors,
+                                'year': r.year,
+                                'abstract': r.abstract,
+                                'url': r.link,
+                                'citations': r.citations,
+                                'journal': r.venue,
+                                'doi': r.doi,
+                                'open_access': getattr(r, 'open_access', False),
+                                'source': 'OpenAlex'
+                            }
+                            all_results.append(paper)
+                        
+                    except Exception as e:
+                        errors.append(f"OpenAlex: {e}")
+                        print(f"OpenAlex 搜索失败: {e}")
+                
+                # 中文文献数据源
+                if source in ["中文文献", "百度学术"]:
+                    self._safe_update(lambda: self.progress_indicators["search"].update_text("正在搜索中文文献..."))
                     try:
                         from knowledge.search.cnki import search_cnki
-                        cnki_results = search_cnki(query, limit=limit * 2)  # 多抓取以供筛选
+                        cnki_results = search_cnki(query, limit=limit)
                         
-                        cnki_papers = []
                         for r in cnki_results:
                             paper = {
                                 'title': r.title,
@@ -2803,42 +2884,289 @@ class EconPaperApp:
                                 'url': r.link,
                                 'citations': r.citations,
                                 'journal': r.source,
-                                'source': '知网 CNKI'
+                                'doi': '',
+                                'source': r.database
                             }
-                            cnki_papers.append(paper)
-                        
-                        # 期刊级别筛选
-                        if filter_cssci and cnki_papers:
-                            self._safe_update(lambda: self.progress_indicators["search"].update_text("正在查询期刊级别..."))
-                            cnki_papers = self._filter_by_journal_rank(cnki_papers, "chinese", show_rank)
-                        
-                        all_results.extend(cnki_papers)
+                            all_results.append(paper)
                         
                     except Exception as e:
-                        print(f"知网搜索失败: {e}")
+                        errors.append(f"中文文献: {e}")
+                        print(f"中文文献搜索失败: {e}")
+                
+                # 获取期刊筛选设置
+                filter_cssci = self.filter_cssci.get() if hasattr(self, 'filter_cssci') else False
+                filter_ssci = self.filter_ssci.get() if hasattr(self, 'filter_ssci') else False
+                show_rank = self.show_rank_info.get() if hasattr(self, 'show_rank_info') else True
+                
+                # 应用期刊级别筛选
+                if all_results and (filter_cssci or filter_ssci or show_rank):
+                    self._safe_update(lambda: self.progress_indicators["search"].update_text("正在查询期刊级别..."))
+                    try:
+                        from knowledge.search.journal_rank import enrich_with_rank_info, filter_by_quality
+                        
+                        # 添加期刊级别信息
+                        if show_rank:
+                            all_results = enrich_with_rank_info(all_results)
+                        
+                        # 筛选高质量期刊
+                        if filter_cssci or filter_ssci:
+                            original_count = len(all_results)
+                            all_results = filter_by_quality(
+                                all_results,
+                                require_cssci=filter_cssci,
+                                require_ssci=filter_ssci,
+                                min_ssci_quartile="Q2" if filter_ssci else ""
+                            )
+                            filtered_count = original_count - len(all_results)
+                            if filtered_count > 0:
+                                print(f"期刊筛选: 过滤了 {filtered_count} 篇非核心期刊论文")
+                    except Exception as e:
+                        print(f"期刊筛选失败: {e}")
                 
                 if not all_results:
-                    self._set_result(self.search_result, "未找到相关文献，请尝试其他关键词")
+                    error_msg = "未找到相关文献。\n\n"
+                    if errors:
+                        error_msg += "错误信息:\n" + "\n".join(errors)
+                    error_msg += "\n\n💡 建议:\n1. 尝试使用英文关键词\n2. 使用更通用的学术术语\n3. 检查网络连接"
+                    self._set_result(self.search_result, error_msg)
+                    self._safe_update(lambda: self.search_status_label.config(text="未找到结果"))
                     return
                 
-                # AI智能筛选（如果启用）
+                # 去重（根据标题）
+                seen_titles = set()
+                unique_results = []
+                for paper in all_results:
+                    title_key = paper['title'].lower().strip()
+                    if title_key not in seen_titles:
+                        seen_titles.add(title_key)
+                        unique_results.append(paper)
+                all_results = unique_results
+                
+                # AI智能筛选（如果启用且结果数量足够多）
                 if enable_ai and len(all_results) > limit:
                     self._safe_update(lambda: self.progress_indicators["search"].update_text("AI正在筛选最相关文献..."))
                     all_results = self._ai_filter_papers(query, all_results, limit)
+                
+                # 按引用数排序
+                all_results.sort(key=lambda x: x.get('citations', 0) or 0, reverse=True)
                 
                 # 格式化输出
                 formatted = self._format_search_results(all_results, enable_ai)
                 self._set_result(self.search_result, formatted)
                 
+                # 更新状态
+                status_text = f"共 {len(all_results)} 篇文献"
+                self._safe_update(lambda: self.search_status_label.config(text=status_text))
+                
                 # 保存搜索结果供其他功能使用
                 self.last_search_results = all_results
                 
             except Exception as e:
-                self._set_result(self.search_result, f"搜索失败: {e}")
+                self._set_result(self.search_result, f"搜索失败: {e}\n\n请检查网络连接后重试。")
+                self._safe_update(lambda: self.search_status_label.config(text="搜索失败"))
             finally:
                 self._safe_update(lambda: self.progress_indicators["search"].stop())
         
         self._run_in_thread(do_search)
+    
+    def _generate_literature_review(self):
+        """基于搜索结果生成文献综述"""
+        if not self._check_api_before_action("生成文献综述"):
+            return
+        
+        if not hasattr(self, 'last_search_results') or not self.last_search_results:
+            messagebox.showwarning("提示", "请先搜索文献")
+            return
+        
+        self.progress_indicators["search"].start("AI正在生成文献综述...")
+        
+        def do_generate():
+            try:
+                from openai import OpenAI
+                from config.settings import settings
+                
+                client = OpenAI(base_url=settings.llm_api_base, api_key=settings.llm_api_key)
+                
+                # 构建文献摘要
+                papers_text = ""
+                for i, p in enumerate(self.last_search_results[:15], 1):
+                    title = p.get('title', '无标题')
+                    authors = p.get('authors', '未知')
+                    year = p.get('year', '')
+                    abstract = p.get('abstract', '')[:300]
+                    papers_text += f"{i}. {title} ({authors}, {year})\n摘要：{abstract}\n\n"
+                
+                prompt = f"""请基于以下学术文献，生成一段学术论文风格的文献综述（约500-800字）。
+
+要求：
+1. 采用学术论文的写作风格，客观、严谨
+2. 综合多篇文献的观点，进行归纳和对比
+3. 使用正确的引用格式（作者，年份）
+4. 指出研究的共识与分歧
+5. 提出未来研究方向
+
+文献列表：
+{papers_text}
+
+请生成文献综述："""
+
+                response = client.chat.completions.create(
+                    model=settings.llm_model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.7,
+                    max_tokens=2000
+                )
+                
+                review = response.choices[0].message.content
+                if review:
+                    current = self.search_result.get("1.0", tk.END)
+                    result_text = f"""{'='*60}
+📝 AI 生成的文献综述
+{'='*60}
+
+{review}
+
+{'='*60}
+原始搜索结果
+{'='*60}
+
+{current}"""
+                    self._set_result(self.search_result, result_text)
+                
+            except Exception as e:
+                self._safe_update(lambda: messagebox.showerror("失败", f"生成文献综述失败: {e}"))
+            finally:
+                self._safe_update(lambda: self.progress_indicators["search"].stop())
+        
+        self._run_in_thread(do_generate)
+    
+    def _generate_citations(self):
+        """生成引用格式"""
+        if not hasattr(self, 'last_search_results') or not self.last_search_results:
+            messagebox.showwarning("提示", "请先搜索文献")
+            return
+        
+        # 创建选择窗口
+        cite_window = tk.Toplevel(self.root)
+        cite_window.title("选择引用格式")
+        cite_window.geometry("600x500")
+        cite_window.configure(bg=ModernStyle.BG_MAIN)
+        cite_window.transient(self.root)
+        
+        # 居中显示
+        cite_window.update_idletasks()
+        x = (cite_window.winfo_screenwidth() - 600) // 2
+        y = (cite_window.winfo_screenheight() - 500) // 2
+        cite_window.geometry(f"+{x}+{y}")
+        
+        content = tk.Frame(cite_window, bg=ModernStyle.BG_MAIN, padx=25, pady=20)
+        content.pack(fill=tk.BOTH, expand=True)
+        
+        tk.Label(
+            content,
+            text="选择引用格式",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_LG, "bold"),
+            bg=ModernStyle.BG_MAIN
+        ).pack(anchor="w", pady=(0, 15))
+        
+        style_var = tk.StringVar(value="apa")
+        styles = [
+            ("APA 格式", "apa"),
+            ("GB/T 7714 格式（中国国标）", "gb"),
+            ("MLA 格式", "mla"),
+            ("Chicago 格式", "chicago")
+        ]
+        
+        for text, value in styles:
+            tk.Radiobutton(
+                content,
+                text=text,
+                variable=style_var,
+                value=value,
+                bg=ModernStyle.BG_MAIN,
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
+            ).pack(anchor="w", pady=3)
+        
+        # 引用预览区
+        tk.Label(
+            content,
+            text="引用预览：",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
+            bg=ModernStyle.BG_MAIN
+        ).pack(anchor="w", pady=(20, 10))
+        
+        preview_text = scrolledtext.ScrolledText(
+            content,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            height=15,
+            wrap=tk.WORD,
+            bg=ModernStyle.BG_SECONDARY
+        )
+        preview_text.pack(fill=tk.BOTH, expand=True)
+        
+        def update_preview(*args):
+            style = style_var.get()
+            citations = []
+            
+            for i, p in enumerate(self.last_search_results[:20], 1):
+                authors = p.get('authors', '未知作者')
+                year = p.get('year', '')
+                title = p.get('title', '无标题')
+                journal = p.get('journal', '')
+                doi = p.get('doi', '')
+                
+                if style == "apa":
+                    cite = f"{authors} ({year}). {title}."
+                    if journal:
+                        cite += f" {journal}."
+                    if doi:
+                        cite += f" https://doi.org/{doi}"
+                elif style == "gb":
+                    cite = f"[{i}] {authors}. {title}[J]. {journal}, {year}."
+                elif style == "mla":
+                    cite = f'{authors}. "{title}." {journal}, {year}.'
+                elif style == "chicago":
+                    cite = f'{authors}. "{title}." {journal} ({year}).'
+                    if doi:
+                        cite += f" https://doi.org/{doi}."
+                else:
+                    cite = f"{authors} ({year}). {title}. {journal}."
+                
+                citations.append(cite)
+            
+            preview_text.delete("1.0", tk.END)
+            preview_text.insert("1.0", "\n\n".join(citations))
+        
+        style_var.trace("w", update_preview)
+        update_preview()
+        
+        # 按钮
+        btn_frame = tk.Frame(content, bg=ModernStyle.BG_MAIN)
+        btn_frame.pack(fill=tk.X, pady=(15, 0))
+        
+        def copy_citations():
+            self.root.clipboard_clear()
+            self.root.clipboard_append(preview_text.get("1.0", tk.END).strip())
+            messagebox.showinfo("成功", "✅ 引用已复制到剪贴板")
+        
+        ModernButton(
+            btn_frame,
+            text="📋 复制引用",
+            command=copy_citations,
+            width=120,
+            height=40
+        ).pack(side=tk.LEFT)
+        
+        tk.Button(
+            btn_frame,
+            text="关闭",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_SECONDARY,
+            bd=0,
+            padx=20,
+            pady=10,
+            command=cite_window.destroy
+        ).pack(side=tk.LEFT, padx=15)
     
     def _filter_by_journal_rank(self, papers: list, source_type: str, show_rank: bool) -> list:
         """根据期刊级别过滤论文
@@ -3127,31 +3455,6 @@ class EconPaperApp:
         except Exception:
             pass
     
-    def _run_gs_auth(self):
-        """运行 Google Scholar 认证"""
-        from knowledge.search.google_scholar import authenticate_google_scholar
-        
-        def on_complete(success):
-            if success:
-                self._safe_update(lambda: messagebox.showinfo("成功", "Google Scholar 认证成功！后续搜索将使用该账号。"))
-            else:
-                self._safe_update(lambda: messagebox.showwarning("提示", "认证未完成或已取消。"))
-            self._safe_update(self._check_gs_auth_status)
-        
-        # 在新线程中运行认证，避免阻塞UI
-        self._run_in_thread(lambda: authenticate_google_scholar(callback=on_complete))
-
-    def _check_gs_auth_status(self):
-        """检查 Google Scholar 认证状态并更新 UI"""
-        try:
-            from knowledge.search.google_scholar import check_authentication_status
-            is_authed = check_authentication_status()
-            if is_authed:
-                self.gs_auth_btn.config(text="✅ 已认证", fg=ModernStyle.SUCCESS)
-            else:
-                self.gs_auth_btn.config(text="去认证", fg=ModernStyle.TEXT_PRIMARY)
-        except Exception:
-            pass
 
     def _save_settings(self):
         """保存设置"""
