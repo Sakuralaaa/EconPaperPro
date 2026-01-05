@@ -2,11 +2,8 @@ name: Build EconPaper Pro
 
 on:
   push:
-    branches: [ main ]
     tags:
       - 'v*'
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:  # 允许手动触发
 
 jobs:
