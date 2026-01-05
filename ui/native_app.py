@@ -495,31 +495,40 @@ class EconPaperApp:
         settings_inner = tk.Frame(settings_btn, bg=ModernStyle.BG_SIDEBAR, padx=12, pady=10)
         settings_inner.pack(fill=tk.X)
         
-        tk.Label(
+        settings_icon = tk.Label(
             settings_inner,
             text="⚙️",
             font=(ModernStyle.FONT_FAMILY, 14),
-            bg=ModernStyle.BG_SIDEBAR
-        ).pack(side=tk.LEFT)
+            bg=ModernStyle.BG_SIDEBAR,
+            cursor="hand2"
+        )
+        settings_icon.pack(side=tk.LEFT)
         
-        tk.Label(
+        settings_text = tk.Label(
             settings_inner,
             text="系统设置",
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
             bg=ModernStyle.BG_SIDEBAR,
-            fg=ModernStyle.TEXT_PRIMARY
-        ).pack(side=tk.LEFT, padx=10)
+            fg=ModernStyle.TEXT_PRIMARY,
+            cursor="hand2"
+        )
+        settings_text.pack(side=tk.LEFT, padx=10)
         
         self.nav_buttons["settings"] = {
             "frame": settings_btn,
             "inner": settings_inner,
-            "title": settings_inner.winfo_children()[1],
+            "title": settings_text,
             "desc": None
         }
         
-        for widget in settings_btn.winfo_children():
-            widget.bind("<Button-1>", lambda e: self._show_page("settings"))
-        settings_btn.bind("<Button-1>", lambda e: self._show_page("settings"))
+        # 绑定所有相关控件的点击事件
+        def on_settings_click(e):
+            self._show_page("settings")
+        
+        settings_btn.bind("<Button-1>", on_settings_click)
+        settings_inner.bind("<Button-1>", on_settings_click)
+        settings_icon.bind("<Button-1>", on_settings_click)
+        settings_text.bind("<Button-1>", on_settings_click)
 
     def _on_nav_hover(self, page_id, is_enter):
         """导航悬停效果"""
