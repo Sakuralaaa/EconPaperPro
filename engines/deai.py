@@ -1,28 +1,38 @@
 # -*- coding: utf-8 -*-
 """
-降AI引擎模块
+降AI引擎模块 (优化版)
 消除AI写作痕迹，使文本更具人类学者风格
+
+优化内容：
+1. 使用专业的论文修改助手提示词
+2. 增强规则替换策略
+3. 分句精细处理
+4. 多维度AI检测
 """
 
 from typing import List, Dict, Optional
 from dataclasses import dataclass, field
+import re
+import random
 from core.llm import get_llm_client
-from core.prompts import PromptTemplates
 
 
 def split_sentences(text: str) -> List[str]:
-    """
-    分割文本为句子列表
+    """分割文本为句子列表"""
+    pattern = r'([。！？；.!?;])'
+    parts = re.split(pattern, text)
     
-    Args:
-        text: 输入文本
-        
-    Returns:
-        List[str]: 句子列表
-    """
-    # 标准化句末标点
-    normalized = text.replace("！", "。").replace("？", "。")
-    sentences = [s.strip() for s in normalized.split("。") if s.strip()]
+    sentences = []
+    i = 0
+    while i < len(parts):
+        if i + 1 < len(parts) and re.match(pattern, parts[i + 1]):
+            sentences.append(parts[i] + parts[i + 1])
+            i += 2
+        else:
+            if parts[i].strip():
+                sentences.append(parts[i])
+            i += 1
+    
     return sentences
 
 
@@ -43,53 +53,164 @@ class DeAIResult:
     ai_score_before: float
     ai_score_after: float
     changes: List[str]
+    sentences_processed: int = 0
 
 
 class DeAIEngine:
     """
-    降AI引擎
+    降AI引擎 (优化版)
     
-    消除AI写作痕迹，使文本更具人类学者风格
-    
-    使用示例:
-        engine = DeAIEngine()
-        result = engine.process(content)
+    使用专业的论文修改助手策略：
+    1. 解释性扩展 - 使表达更详尽
+    2. 系统性词汇替换 - 固定替换模式
+    3. 句式微调 - 增强逻辑连接
+    4. 消除AI典型特征 - 删除填充词/规整结构
     """
     
-    # AI写作特征
+    # AI写作特征 (用于检测)
     AI_MARKERS = {
-        # 结构化序列
         "sequence_markers": [
             "首先", "其次", "再次", "最后", "第一", "第二", "第三", "第四",
             "一方面", "另一方面", "此外", "同时", "另外", "与此同时",
             "紧接着", "随后", "进一步",
         ],
-        # 填充短语
         "filler_phrases": [
             "值得注意的是", "需要指出的是", "综上所述", "总的来说", 
             "总而言之", "不难发现", "显而易见", "毋庸置疑", "不可否认", 
             "众所周知", "事实上", "实际上", "可以说", "由此可见",
             "需要强调的是", "特别值得一提的是", "不言而喻",
         ],
-        # 模糊表达
         "vague_expressions": [
             "在一定程度上", "在某种意义上", "从某种角度来看",
             "可能会", "或许", "大概", "似乎", "貌似",
             "相对而言", "总体上看", "一般来说", "通常情况下",
         ],
-        # 过度正式
         "overly_formal": [
             "鉴于此", "基于此", "据此", "由此可见", "由此可知", 
             "由上可知", "综合以上分析", "基于上述分析",
             "承上所述", "如前所述", "正如前文所述",
         ],
-        # 连接词滥用
         "connector_abuse": [
             "然而", "但是", "因此", "所以", "故而", "于是",
             "尽管如此", "虽然如此", "即便如此",
         ]
     }
     
+    # 专业词汇替换规则 (基于用户提供的策略)
+    WORD_SUBSTITUTIONS = {
+        # 动词替换
+        "采用": ["运用", "选用"],
+        "使用": ["运用", "借助"],
+        "基于": ["依据", "根据"],
+        "利用": ["借助", "运用"],
+        "通过": ["借助", "经由"],
+        "并": ["并且", "同时"],
+        # 名词/形容词替换
+        "原因": ["缘由"],
+        "符合": ["契合"],
+        "适合": ["适宜"],
+        "特点": ["特性"],
+        "提升": ["提高"],
+        "提高": ["提升"],
+        "极大地": ["在极大程度上"],
+        "立即": ["即刻"],
+        # 连词替换
+        "和": ["以及", "与"],
+        "及": ["以及"],
+        "与": ["以及", "同"],
+        "其": ["该", "相应"],
+    }
+    
+    # 动词扩展规则
+    VERB_EXPANSIONS = {
+        "管理": ["开展管理工作", "进行管理"],
+        "配置": ["进行配置", "完成配置操作"],
+        "处理": ["执行处理工作", "进行处理"],
+        "恢复": ["执行恢复操作"],
+        "实现": ["得以实现", "用以实现"],
+        "交互": ["进行数据交互", "开展交互"],
+        "分析": ["开展分析工作", "进行分析"],
+        "研究": ["开展研究工作", "进行深入研究"],
+        "探讨": ["展开探讨", "进行探讨"],
+        "验证": ["进行验证", "开展验证工作"],
+        "检验": ["进行检验", "开展检验"],
+        "优化": ["进行优化", "开展优化工作"],
+    }
+    
+    # 填充短语删除映射
+    FILLER_REPLACEMENTS = {
+        "值得注意的是，": "",
+        "需要指出的是，": "",
+        "综上所述，": "",
+        "总的来说，": "",
+        "不难发现，": "",
+        "显而易见，": "",
+        "毋庸置疑，": "",
+        "众所周知，": "",
+        "事实上，": "",
+        "不可否认，": "",
+        "需要强调的是，": "",
+        "特别值得一提的是，": "",
+        "总而言之，": "",
+        "由此可见，": "这表明，",
+        "基于此，": "据此，",
+        "鉴于此，": "考虑到这一点，",
+    }
+    
+    # 句式转换模式
+    SENTENCE_TRANSFORMS = [
+        # (原始模式, 替换模式)
+        (r"若(.+?)，则(.+)", r"如果\1，那么\2"),
+        (r"(.+?)对(.+?)产生了(.+?)影响", r"\1对\2形成了\3作用"),
+        (r"^首先，(.+?)。其次，(.+?)。最后，(.+?)。", r"\1。在此基础上，\2。更为重要的是，\3。"),
+        (r"一方面，(.+?)；另一方面，(.+?)", r"\1。与此同时，\2"),
+    ]
+    
+    # 专业论文修改助手系统提示词
+    SYSTEM_PROMPT = """你的角色与目标：
+
+你现在扮演一个专业的"论文修改助手"。你的核心任务是接收一段中文原文（通常是技术性或学术性的描述），并将其改写成一种特定的风格。
+
+这种风格的特点是：在保持专业性的前提下，增强文本的解释性和可读性，使表达更为详尽和流畅。最终输出应是一篇结构完整、逻辑清晰、语言精练的学术性文本。
+
+核心原则与要求（全局最高优先级）
+
+1. 坚守学术严谨性：
+   - 绝对保留专有名词：任何学术概念、技术术语必须保持原样
+   - 避免空泛修饰：不得引入"系统性"、"根本性"、"本质上"等意义宽泛的词汇
+
+2. 强化句子结构与连贯性：
+   - 优先使用完整句式：减少逗号分割的零散短语
+   - 确保行文流畅：避免生硬套用规则导致语句不自然
+
+3. 控制输出篇幅：
+   - 篇幅严格对等：修改后的文本长度应与原文大致相等
+
+4. 杜绝过度口语化：
+   - 维持书面语风格：严禁使用"至于xxx呢"、"这个嘛"等口语表达
+
+核心修改手法：
+
+1. 解释性扩展：
+   - "管理" -> "开展管理工作"
+   - "配置" -> "进行参数配置"
+   - "提供功能" -> "具备相应的功能"
+
+2. 系统性词汇替换：
+   - 采用/使用 -> 运用/选用
+   - 基于 -> 依据
+   - 通过 -> 借助/经由
+   - 和/及/与 -> 以及
+   - 原因 -> 缘由
+   - 符合 -> 契合
+
+3. 句式微调：
+   - 使用"把"字句优化语序
+   - "若...则..." -> "如果...那么..."
+   - 添加"首先"、"此外"、"因此"等逻辑连接词
+
+请根据以上规则进行改写，直接输出修改后的文本，不添加任何解释。"""
+
     def __init__(self):
         """初始化降AI引擎"""
         self._llm = None
@@ -114,7 +235,7 @@ class DeAIEngine:
         # 1. 检测AI痕迹
         ai_score_before = self.estimate_ai_score(content)
         
-        # 2. 人性化改写
+        # 2. 多策略人性化改写
         processed = self._humanize(content)
         
         # 3. 再次检测
@@ -128,35 +249,28 @@ class DeAIEngine:
             processed=processed,
             ai_score_before=ai_score_before,
             ai_score_after=ai_score_after,
-            changes=changes
+            changes=changes,
+            sentences_processed=len(split_sentences(content))
         )
     
     def estimate_ai_score(self, text: str) -> float:
         """
         估算AI写作概率
         
-        Args:
-            text: 文本内容
-            
-        Returns:
-            float: AI概率 (0-100)
+        基于多维度特征检测
         """
-        if not text:
-            return 0.0
-        
-        # 对于非常短的文本，AI检测不可靠
-        if len(text) < 30:
+        if not text or len(text) < 30:
             return 0.0
         
         scores = []
         weights = []
         
+        text_len_factor = len(text) / 1000
+        
         # 1. 检测结构化序列（权重20%）
         sequence_count = sum(
             text.count(m) for m in self.AI_MARKERS["sequence_markers"]
         )
-        # 根据文本长度归一化
-        text_len_factor = len(text) / 1000
         normalized_seq = sequence_count / max(1, text_len_factor)
         sequence_score = min(100, normalized_seq * 12)
         scores.append(sequence_score)
@@ -188,8 +302,7 @@ class DeAIEngine:
                 avg_len = sum(lengths) / len(lengths)
                 variance = sum((l - avg_len) ** 2 for l in lengths) / len(lengths)
                 std_dev = variance ** 0.5
-                # 标准差越小，越可能是AI（句子长度过于均匀）
-                # 人类写作标准差通常在15-40之间
+                
                 if std_dev < 10:
                     uniformity_score = 90
                 elif std_dev < 20:
@@ -228,20 +341,11 @@ class DeAIEngine:
         return 50.0
     
     def detect_ai_features(self, text: str) -> AIDetectionResult:
-        """
-        详细检测AI特征
-        
-        Args:
-            text: 文本内容
-            
-        Returns:
-            AIDetectionResult: 检测结果
-        """
+        """详细检测AI特征"""
         dimensions = {}
         ai_markers = []
         suggestions = []
         
-        # 检测各维度
         for category, markers in self.AI_MARKERS.items():
             found = [m for m in markers if m in text]
             count = len(found)
@@ -250,7 +354,7 @@ class DeAIEngine:
                 dimensions["结构规整度"] = min(10, count * 2)
                 if found:
                     ai_markers.extend([f"序列词: {m}" for m in found[:3]])
-                    suggestions.append("减少使用'首先、其次、最后'等序列词")
+                    suggestions.append("减少使用'首先、其次、最后'等序列词，改用更自然的过渡")
                     
             elif category == "filler_phrases":
                 dimensions["填充短语"] = min(10, count * 3)
@@ -292,142 +396,187 @@ class DeAIEngine:
     
     def _humanize(self, content: str) -> str:
         """
-        人性化改写
+        人性化改写 - 多策略组合
         
-        Args:
-            content: 原始文本
-            
-        Returns:
-            str: 改写后的文本
+        1. 先进行规则替换（快速）
+        2. 再用LLM精修（深度）
         """
-        prompt = PromptTemplates.DEAI_HUMANIZE.format(content=content)
+        # Step 1: 规则预处理
+        pre_processed = self._rule_based_humanize(content)
         
+        # Step 2: LLM 精修
         try:
-            processed = self.llm.invoke(
-                prompt,
-                system_prompt="你是资深学术写作专家，请将AI风格的文本改写为更具人类学者特色的表达。"
-            )
+            processed = self._llm_humanize(pre_processed)
             return processed
-            
         except Exception:
-            # 如果LLM调用失败，尝试规则替换
-            return self._rule_based_humanize(content)
+            # 如果LLM调用失败，返回规则处理结果
+            return pre_processed
     
     def _rule_based_humanize(self, content: str) -> str:
         """
         基于规则的人性化改写
-        
-        Args:
-            content: 原始文本
-            
-        Returns:
-            str: 改写后的文本
         """
         result = content
         
-        # 替换填充短语
-        filler_replacements = {
-            "值得注意的是，": "",
-            "需要指出的是，": "",
-            "综上所述，": "",
-            "总的来说，": "",
-            "不难发现，": "",
-            "显而易见，": "",
-            "毋庸置疑，": "",
-            "众所周知，": "",
-            "事实上，": "",
-            "不可否认，": "",
-            "需要强调的是，": "",
-            "特别值得一提的是，": "",
-        }
-        
-        for old, new in filler_replacements.items():
+        # 1. 删除/替换填充短语
+        for old, new in self.FILLER_REPLACEMENTS.items():
             result = result.replace(old, new)
         
-        # 替换过于规整的序列结构
-        # 只替换每个标记的第一次出现，避免过度修改
+        # 2. 词汇替换
+        for word, replacements in self.WORD_SUBSTITUTIONS.items():
+            if word in result:
+                replacement = random.choice(replacements)
+                # 只替换部分，保持自然
+                count = result.count(word)
+                replace_count = max(1, count // 2)
+                for _ in range(replace_count):
+                    result = result.replace(word, replacement, 1)
+        
+        # 3. 动词扩展 (选择性)
+        for verb, expansions in self.VERB_EXPANSIONS.items():
+            if verb in result and random.random() < 0.3:
+                expansion = random.choice(expansions)
+                result = result.replace(verb, expansion, 1)
+        
+        # 4. 句式转换
+        for pattern, replacement in self.SENTENCE_TRANSFORMS:
+            if random.random() < 0.5:
+                result = re.sub(pattern, replacement, result)
+        
+        # 5. 打破规整的序列结构
         sequence_replacements = {
-            "首先，": "",  # 删除"首先"使结构不那么机械
+            "首先，": "",
             "其次，": "在此基础上，",
             "再次，": "同样值得关注的是，",
-            "最后，": "更重要的是，",
+            "最后，": "更为重要的是，",
             "一方面，": "从一个角度来看，",
             "另一方面，": "从另一个维度来看，",
         }
-        
         for old, new in sequence_replacements.items():
-            result = result.replace(old, new, 1)  # 只替换第一次出现
-        
-        # 替换过度正式的表达
-        formal_replacements = {
-            "鉴于此，": "基于这一考虑，",
-            "基于此，": "由此，",
-            "综合以上分析，": "从上述分析来看，",
-            "由此可见，": "这表明，",
-            "由此可知，": "可以看出，",
-        }
-        
-        for old, new in formal_replacements.items():
-            result = result.replace(old, new)
+            result = result.replace(old, new, 1)
         
         return result
     
+    def _llm_humanize(self, content: str) -> str:
+        """
+        使用LLM进行人性化改写
+        """
+        # 分段处理长文本
+        if len(content) > 2000:
+            paragraphs = content.split("\n\n")
+            processed_paragraphs = []
+            for para in paragraphs:
+                if len(para.strip()) < 50:
+                    processed_paragraphs.append(para)
+                else:
+                    processed_paragraphs.append(self._llm_humanize_single(para))
+            return "\n\n".join(processed_paragraphs)
+        else:
+            return self._llm_humanize_single(content)
+    
+    def _llm_humanize_single(self, content: str) -> str:
+        """
+        LLM改写单段文本
+        """
+        prompt = f"""请对以下学术文本进行改写，消除AI写作痕迹，使其更像人类学者的表达。
+
+## 改写要求
+1. 保持原文的核心观点和专业术语
+2. 消除规整的序列结构（首先、其次、最后）
+3. 删除填充性短语（值得注意的是、综上所述等）
+4. 变化句子长度，避免过于均匀
+5. 使用更自然的过渡和连接
+6. 保持学术规范性和专业性
+7. 输出长度与原文大致相等
+
+## 原文
+{content}
+
+## 要求
+直接输出改写后的文本，不添加任何解释说明。"""
+
+        try:
+            processed = self.llm.invoke(
+                prompt,
+                system_prompt=self.SYSTEM_PROMPT,
+                temperature=0.75  # 稍高的温度增加变化性
+            )
+            return processed.strip()
+        except Exception:
+            return content
+    
     def _identify_changes(self, original: str, processed: str) -> List[str]:
-        """
-        识别主要变化
-        
-        Args:
-            original: 原始文本
-            processed: 处理后文本
-            
-        Returns:
-            List[str]: 变化描述
-        """
+        """识别主要变化"""
         changes = []
         
         # 检测序列词变化
         orig_seq = sum(original.count(m) for m in self.AI_MARKERS["sequence_markers"])
         proc_seq = sum(processed.count(m) for m in self.AI_MARKERS["sequence_markers"])
         if proc_seq < orig_seq:
-            changes.append("减少了序列性词汇使用")
+            changes.append(f"减少了{orig_seq - proc_seq}处序列性词汇")
         
         # 检测填充短语变化
         orig_fill = sum(original.count(p) for p in self.AI_MARKERS["filler_phrases"])
         proc_fill = sum(processed.count(p) for p in self.AI_MARKERS["filler_phrases"])
         if proc_fill < orig_fill:
-            changes.append("删除了填充性短语")
+            changes.append(f"删除了{orig_fill - proc_fill}处填充性短语")
+        
+        # 词汇替换检测
+        replaced_count = 0
+        for word in self.WORD_SUBSTITUTIONS.keys():
+            if word in original and word not in processed:
+                replaced_count += 1
+        if replaced_count > 0:
+            changes.append(f"进行了{replaced_count}处词汇优化")
+        
+        # 句式变化检测
+        orig_sentences = len(split_sentences(original))
+        proc_sentences = len(split_sentences(processed))
+        if abs(proc_sentences - orig_sentences) >= 2:
+            changes.append("调整了句子结构")
         
         # 长度变化
-        if len(processed) < len(original) * 0.95:
+        len_ratio = len(processed) / len(original) if len(original) > 0 else 1
+        if len_ratio < 0.95:
             changes.append("精简了冗余表达")
+        elif len_ratio > 1.05:
+            changes.append("增强了解释性表达")
         
         if not changes:
-            changes.append("调整了表达方式")
+            changes.append("调整了表达方式，增强自然度")
         
-        return changes
+        return changes[:5]
     
     def get_report(self, result: DeAIResult) -> str:
-        """
-        生成降AI报告
-        
-        Args:
-            result: 降AI结果
-            
-        Returns:
-            str: Markdown 格式的报告
-        """
+        """生成降AI报告"""
         lines = []
-        lines.append("# 🤖 降AI处理报告\n")
+        lines.append("## 🤖 降AI处理报告\n")
         
         # AI概率变化
         reduction = result.ai_score_before - result.ai_score_after
-        lines.append("## AI概率变化")
+        reduction_pct = (reduction / result.ai_score_before * 100) if result.ai_score_before > 0 else 0
+        
+        lines.append("### AI概率变化")
         lines.append(f"- 处理前AI概率：{result.ai_score_before:.1f}%")
         lines.append(f"- 处理后AI概率：{result.ai_score_after:.1f}%")
-        lines.append(f"- 降低幅度：**{reduction:.1f}%**\n")
+        lines.append(f"- **降低幅度：{reduction:.1f}% ({reduction_pct:.0f}%)**")
+        lines.append(f"- 处理句子数：{result.sentences_processed}")
+        lines.append("")
+        
+        # 效果评估
+        if result.ai_score_after < 30:
+            lines.append("### 效果评估")
+            lines.append("✅ **优秀** - AI痕迹已基本消除，文本自然度高")
+        elif result.ai_score_after < 50:
+            lines.append("### 效果评估")
+            lines.append("⚠️ **良好** - AI痕迹显著减少，建议进一步优化")
+        else:
+            lines.append("### 效果评估")
+            lines.append("❌ **需改进** - 仍有明显AI痕迹，建议手动调整")
+        lines.append("")
         
         # 主要变化
-        lines.append("## 主要变化")
+        lines.append("### 主要变化")
         for change in result.changes:
             lines.append(f"- {change}")
         
