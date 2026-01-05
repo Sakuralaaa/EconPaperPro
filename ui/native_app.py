@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-EconPaper Pro - 原生 Tkinter GUI 应用 (优化版)
+EconPaper Pro - 原生 Tkinter GUI 应用 (v2.2优化版)
 - 修复UI卡顿问题
 - 现代化界面设计
 - 添加进度指示器
+- 优化字体大小
+- 分离API配置
+- 模型拉取功能
 """
 
 import tkinter as tk
@@ -29,45 +32,46 @@ sys.path.insert(0, str(INTERNAL_DIR))
 
 
 class ModernStyle:
-    """现代简约风格配置 - 优化版"""
+    """现代简约风格配置 - 优化字体大小"""
     
-    # 主色调 (更柔和的蓝色系)
-    PRIMARY = "#2563EB"        # 品牌蓝
-    PRIMARY_DARK = "#1D4ED8"   # 深蓝色
-    PRIMARY_LIGHT = "#DBEAFE"  # 浅蓝背景
-    PRIMARY_HOVER = "#3B82F6"  # 悬停蓝
+    # 主色调
+    PRIMARY = "#2563EB"
+    PRIMARY_DARK = "#1D4ED8"
+    PRIMARY_LIGHT = "#DBEAFE"
+    PRIMARY_HOVER = "#3B82F6"
     
     # 功能色
-    SUCCESS = "#10B981"        # 成功绿
-    WARNING = "#F59E0B"        # 警告橙
-    ERROR = "#EF4444"          # 错误红
-    INFO = "#6366F1"           # 信息紫
+    SUCCESS = "#10B981"
+    WARNING = "#F59E0B"
+    ERROR = "#EF4444"
+    INFO = "#6366F1"
     
     # 中性色
-    BG_MAIN = "#FFFFFF"        # 主背景
-    BG_SECONDARY = "#F8FAFC"   # 次级背景
-    BG_SIDEBAR = "#F1F5F9"     # 侧边栏
-    BG_CARD = "#FFFFFF"        # 卡片背景
-    BG_HOVER = "#E2E8F0"       # 悬停色
-    BG_INPUT = "#F8FAFC"       # 输入框背景
+    BG_MAIN = "#FFFFFF"
+    BG_SECONDARY = "#F8FAFC"
+    BG_SIDEBAR = "#F1F5F9"
+    BG_CARD = "#FFFFFF"
+    BG_HOVER = "#E2E8F0"
+    BG_INPUT = "#F8FAFC"
     
     # 文字颜色
-    TEXT_PRIMARY = "#0F172A"   # 主要文字
-    TEXT_SECONDARY = "#64748B" # 次要文字
-    TEXT_MUTED = "#94A3B8"     # 弱化文字
-    TEXT_LIGHT = "#FFFFFF"     # 亮色文字
+    TEXT_PRIMARY = "#0F172A"
+    TEXT_SECONDARY = "#64748B"
+    TEXT_MUTED = "#94A3B8"
+    TEXT_LIGHT = "#FFFFFF"
     
     # 边框
-    BORDER = "#E2E8F0"         # 默认边框
-    BORDER_FOCUS = "#2563EB"   # 聚焦边框
+    BORDER = "#E2E8F0"
+    BORDER_FOCUS = "#2563EB"
     
-    # 字体配置
+    # 字体配置 (优化：增大字体)
     FONT_FAMILY = "Microsoft YaHei UI"
-    FONT_SIZE_XL = 18
-    FONT_SIZE_LG = 14
-    FONT_SIZE_MD = 11
-    FONT_SIZE_SM = 10
-    FONT_SIZE_XS = 9
+    FONT_SIZE_XXL = 22   # 特大标题
+    FONT_SIZE_XL = 18    # 大标题
+    FONT_SIZE_LG = 14    # 中标题
+    FONT_SIZE_MD = 12    # 正文（增大）
+    FONT_SIZE_SM = 11    # 次要文字（增大）
+    FONT_SIZE_XS = 10    # 最小字体（增大）
     
     # 间距
     PADDING_XL = 30
@@ -75,11 +79,6 @@ class ModernStyle:
     PADDING_MD = 15
     PADDING_SM = 10
     PADDING_XS = 5
-    
-    # 圆角 (Tkinter 不直接支持，但可用于Canvas绘制)
-    RADIUS_SM = 4
-    RADIUS_MD = 8
-    RADIUS_LG = 12
     
     @classmethod
     def configure_styles(cls, root):
@@ -91,7 +90,7 @@ class ModernStyle:
         except Exception:
             pass
         
-        # 全局配置
+        # 全局配置 - 使用更大字体
         style.configure(".", 
             font=(cls.FONT_FAMILY, cls.FONT_SIZE_SM),
             background=cls.BG_MAIN
@@ -101,7 +100,7 @@ class ModernStyle:
         style.configure("Primary.TButton",
             background=cls.PRIMARY,
             foreground=cls.TEXT_LIGHT,
-            padding=(20, 10),
+            padding=(20, 12),
             borderwidth=0,
             font=(cls.FONT_FAMILY, cls.FONT_SIZE_SM, "bold")
         )
@@ -109,52 +108,28 @@ class ModernStyle:
             background=[("active", cls.PRIMARY_DARK), ("pressed", cls.PRIMARY_DARK)]
         )
         
-        # 次级按钮
-        style.configure("Secondary.TButton",
-            background=cls.BG_SECONDARY,
-            foreground=cls.TEXT_PRIMARY,
-            padding=(15, 8),
-            borderwidth=1
-        )
-        
-        # 进度条 - 现代风格
+        # 进度条
         style.configure("Modern.Horizontal.TProgressbar",
             troughcolor=cls.BG_SECONDARY,
             background=cls.PRIMARY,
             lightcolor=cls.PRIMARY,
             darkcolor=cls.PRIMARY,
             borderwidth=0,
-            thickness=6
+            thickness=8
         )
         
-        # Combobox
+        # Combobox - 更大的字体和间距
         style.configure("TCombobox",
             fieldbackground=cls.BG_INPUT,
             background=cls.BG_MAIN,
             bordercolor=cls.BORDER,
             arrowcolor=cls.TEXT_SECONDARY,
-            padding=5
+            padding=8,
+            font=(cls.FONT_FAMILY, cls.FONT_SIZE_SM)
         )
         style.map("TCombobox",
             fieldbackground=[("readonly", cls.BG_INPUT)],
             selectbackground=[("readonly", cls.PRIMARY_LIGHT)]
-        )
-        
-        # Entry
-        style.configure("TEntry",
-            fieldbackground=cls.BG_INPUT,
-            bordercolor=cls.BORDER,
-            padding=8
-        )
-        
-        # Frame
-        style.configure("Card.TFrame",
-            background=cls.BG_CARD,
-            relief="flat"
-        )
-        
-        style.configure("Sidebar.TFrame",
-            background=cls.BG_SIDEBAR
         )
         
         return style
@@ -167,13 +142,10 @@ class ProgressIndicator:
         self.parent = parent
         self.frame = tk.Frame(parent, bg=ModernStyle.BG_MAIN)
         self.is_active = False
-        self._animation_id = None
         
-        # 创建进度条容器
         self.container = tk.Frame(self.frame, bg=ModernStyle.BG_MAIN, pady=10)
         self.container.pack(fill=tk.X, padx=20)
         
-        # 状态文字
         self.label = tk.Label(
             self.container,
             text=text,
@@ -183,7 +155,6 @@ class ProgressIndicator:
         )
         self.label.pack(anchor="w", pady=(0, 5))
         
-        # 进度条
         self.progress = ttk.Progressbar(
             self.container,
             style="Modern.Horizontal.TProgressbar",
@@ -202,7 +173,7 @@ class ProgressIndicator:
             self.frame.pack(fill=tk.X, before=children[0])
         else:
             self.frame.pack(fill=tk.X)
-        self.progress.start(15)  # 更流畅的动画
+        self.progress.start(15)
         
     def stop(self):
         """停止动画"""
@@ -218,7 +189,7 @@ class ProgressIndicator:
 class ModernButton(tk.Canvas):
     """现代圆角按钮"""
     
-    def __init__(self, parent, text, command=None, width=120, height=36, 
+    def __init__(self, parent, text, command=None, width=120, height=40, 
                  bg_color=None, hover_color=None, text_color=None, **kwargs):
         super().__init__(parent, width=width, height=height, 
                         highlightthickness=0, bg=parent.cget("bg"), **kwargs)
@@ -234,7 +205,6 @@ class ModernButton(tk.Canvas):
         
         self._draw_button()
         
-        # 绑定事件
         self.bind("<Enter>", self._on_enter)
         self.bind("<Leave>", self._on_leave)
         self.bind("<Button-1>", self._on_click)
@@ -243,9 +213,8 @@ class ModernButton(tk.Canvas):
     def _draw_button(self):
         """绘制圆角按钮"""
         self.delete("all")
-        r = 8  # 圆角半径
+        r = 8
         
-        # 绘制圆角矩形
         self.create_arc(0, 0, r*2, r*2, start=90, extent=90, fill=self._current_bg, outline="")
         self.create_arc(self.width-r*2, 0, self.width, r*2, start=0, extent=90, fill=self._current_bg, outline="")
         self.create_arc(0, self.height-r*2, r*2, self.height, start=180, extent=90, fill=self._current_bg, outline="")
@@ -254,7 +223,6 @@ class ModernButton(tk.Canvas):
         self.create_rectangle(r, 0, self.width-r, self.height, fill=self._current_bg, outline="")
         self.create_rectangle(0, r, self.width, self.height-r, fill=self._current_bg, outline="")
         
-        # 绘制文字
         self.create_text(
             self.width/2, self.height/2,
             text=self.text,
@@ -283,13 +251,13 @@ class ModernButton(tk.Canvas):
 
 
 class EconPaperApp:
-    """EconPaper Pro 主应用 - 优化版"""
+    """EconPaper Pro 主应用 - v2.2优化版"""
     
     def __init__(self, root: tk.Tk):
         self.root = root
         self.root.title("📚 EconPaper Pro - 经管论文智能优化")
-        self.root.geometry("1280x800")
-        self.root.minsize(1000, 650)
+        self.root.geometry("1400x900")
+        self.root.minsize(1100, 700)
         
         # 设置图标
         try:
@@ -303,14 +271,13 @@ class EconPaperApp:
         self.style = ModernStyle.configure_styles(root)
         self.root.configure(bg=ModernStyle.BG_MAIN)
         
-        # 任务队列（用于线程安全的UI更新）
+        # 任务队列
         self.update_queue = queue.Queue()
         
-        # 当前选中的标签页
-        self.current_tab = tk.StringVar(value="diagnose")
-        
         # 状态变量
+        self.current_tab = tk.StringVar(value="diagnose")
         self.is_processing = False
+        self.last_search_results = []  # 存储最近的搜索结果
         
         # 创建主布局
         self._create_layout()
@@ -328,7 +295,6 @@ class EconPaperApp:
         except queue.Empty:
             pass
         finally:
-            # 每50ms检查一次队列，更流畅
             self.root.after(50, self._process_queue)
     
     def _safe_update(self, func):
@@ -337,18 +303,14 @@ class EconPaperApp:
         
     def _create_layout(self):
         """创建主布局"""
-        # 主容器
         main_container = tk.Frame(self.root, bg=ModernStyle.BG_MAIN)
         main_container.pack(fill=tk.BOTH, expand=True)
         
-        # 左侧导航栏
         self._create_sidebar(main_container)
         
-        # 右侧内容区
         self.content_frame = tk.Frame(main_container, bg=ModernStyle.BG_MAIN)
         self.content_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        # 创建各个功能页面
         self.pages = {}
         self.progress_indicators = {}
         
@@ -359,16 +321,14 @@ class EconPaperApp:
         self._create_revision_page()
         self._create_settings_page()
         
-        # 默认显示诊断页面
         self._show_page("diagnose")
         
     def _create_sidebar(self, parent):
-        """创建侧边栏 - 优化版"""
-        sidebar = tk.Frame(parent, bg=ModernStyle.BG_SIDEBAR, width=240)
+        """创建侧边栏 - 优化字体大小"""
+        sidebar = tk.Frame(parent, bg=ModernStyle.BG_SIDEBAR, width=260)
         sidebar.pack(side=tk.LEFT, fill=tk.Y)
         sidebar.pack_propagate(False)
         
-        # 右侧分隔线
         separator = tk.Frame(sidebar, bg=ModernStyle.BORDER, width=1)
         separator.pack(side=tk.RIGHT, fill=tk.Y)
         
@@ -376,16 +336,15 @@ class EconPaperApp:
         logo_frame = tk.Frame(sidebar, bg=ModernStyle.BG_SIDEBAR)
         logo_frame.pack(fill=tk.X, pady=(35, 25), padx=25)
         
-        # Logo图标 + 标题
         title_container = tk.Frame(logo_frame, bg=ModernStyle.BG_SIDEBAR)
         title_container.pack(anchor="w")
         
         tk.Label(
             title_container,
             text="📚",
-            font=(ModernStyle.FONT_FAMILY, 24),
+            font=(ModernStyle.FONT_FAMILY, 28),
             bg=ModernStyle.BG_SIDEBAR
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        ).pack(side=tk.LEFT, padx=(0, 12))
         
         title_text = tk.Frame(title_container, bg=ModernStyle.BG_SIDEBAR)
         title_text.pack(side=tk.LEFT)
@@ -393,7 +352,7 @@ class EconPaperApp:
         tk.Label(
             title_text,
             text="EconPaper",
-            font=(ModernStyle.FONT_FAMILY, 16, "bold"),
+            font=(ModernStyle.FONT_FAMILY, 18, "bold"),
             bg=ModernStyle.BG_SIDEBAR,
             fg=ModernStyle.TEXT_PRIMARY
         ).pack(anchor="w")
@@ -401,12 +360,11 @@ class EconPaperApp:
         tk.Label(
             title_text,
             text="Pro",
-            font=(ModernStyle.FONT_FAMILY, 16),
+            font=(ModernStyle.FONT_FAMILY, 18),
             bg=ModernStyle.BG_SIDEBAR,
             fg=ModernStyle.PRIMARY
         ).pack(anchor="w")
         
-        # 副标题
         tk.Label(
             logo_frame,
             text="经管学术论文智能助手",
@@ -415,7 +373,6 @@ class EconPaperApp:
             fg=ModernStyle.TEXT_MUTED
         ).pack(anchor="w", pady=(8, 0))
         
-        # 分隔线
         sep = tk.Frame(sidebar, bg=ModernStyle.BORDER, height=1)
         sep.pack(fill=tk.X, padx=20, pady=10)
         
@@ -434,27 +391,25 @@ class EconPaperApp:
         
         for page_id, icon, title, desc in nav_items:
             btn_frame = tk.Frame(nav_frame, bg=ModernStyle.BG_SIDEBAR, cursor="hand2")
-            btn_frame.pack(fill=tk.X, pady=2)
+            btn_frame.pack(fill=tk.X, pady=3)
             
-            btn_inner = tk.Frame(btn_frame, bg=ModernStyle.BG_SIDEBAR, padx=12, pady=10)
+            btn_inner = tk.Frame(btn_frame, bg=ModernStyle.BG_SIDEBAR, padx=15, pady=12)
             btn_inner.pack(fill=tk.X)
             
-            # 图标
             tk.Label(
                 btn_inner,
                 text=icon,
-                font=(ModernStyle.FONT_FAMILY, 14),
+                font=(ModernStyle.FONT_FAMILY, 16),
                 bg=ModernStyle.BG_SIDEBAR
             ).pack(side=tk.LEFT)
             
-            # 文字容器
             text_frame = tk.Frame(btn_inner, bg=ModernStyle.BG_SIDEBAR)
-            text_frame.pack(side=tk.LEFT, padx=10)
+            text_frame.pack(side=tk.LEFT, padx=12)
             
             title_label = tk.Label(
                 text_frame,
                 text=title,
-                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
                 bg=ModernStyle.BG_SIDEBAR,
                 fg=ModernStyle.TEXT_PRIMARY
             )
@@ -476,7 +431,6 @@ class EconPaperApp:
                 "desc": desc_label
             }
             
-            # 绑定点击事件
             for widget in [btn_frame, btn_inner, title_label, desc_label]:
                 widget.bind("<Button-1>", lambda e, p=page_id: self._show_page(p))
                 widget.bind("<Enter>", lambda e, p=page_id: self._on_nav_hover(p, True))
@@ -492,13 +446,13 @@ class EconPaperApp:
         settings_btn = tk.Frame(settings_frame, bg=ModernStyle.BG_SIDEBAR, cursor="hand2")
         settings_btn.pack(fill=tk.X)
         
-        settings_inner = tk.Frame(settings_btn, bg=ModernStyle.BG_SIDEBAR, padx=12, pady=10)
+        settings_inner = tk.Frame(settings_btn, bg=ModernStyle.BG_SIDEBAR, padx=15, pady=12)
         settings_inner.pack(fill=tk.X)
         
         settings_icon = tk.Label(
             settings_inner,
             text="⚙️",
-            font=(ModernStyle.FONT_FAMILY, 14),
+            font=(ModernStyle.FONT_FAMILY, 16),
             bg=ModernStyle.BG_SIDEBAR,
             cursor="hand2"
         )
@@ -507,12 +461,12 @@ class EconPaperApp:
         settings_text = tk.Label(
             settings_inner,
             text="系统设置",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_SIDEBAR,
             fg=ModernStyle.TEXT_PRIMARY,
             cursor="hand2"
         )
-        settings_text.pack(side=tk.LEFT, padx=10)
+        settings_text.pack(side=tk.LEFT, padx=12)
         
         self.nav_buttons["settings"] = {
             "frame": settings_btn,
@@ -521,7 +475,6 @@ class EconPaperApp:
             "desc": None
         }
         
-        # 绑定所有相关控件的点击事件
         def on_settings_click(e):
             self._show_page("settings")
         
@@ -554,14 +507,14 @@ class EconPaperApp:
                 bg_color = ModernStyle.PRIMARY_LIGHT
                 btn["frame"].config(bg=bg_color)
                 btn["inner"].config(bg=bg_color)
-                btn["title"].config(bg=bg_color, fg=ModernStyle.PRIMARY, font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"))
+                btn["title"].config(bg=bg_color, fg=ModernStyle.PRIMARY, font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"))
                 if btn["desc"]:
                     btn["desc"].config(bg=bg_color, fg=ModernStyle.PRIMARY)
             else:
                 bg_color = ModernStyle.BG_SIDEBAR
                 btn["frame"].config(bg=bg_color)
                 btn["inner"].config(bg=bg_color)
-                btn["title"].config(bg=bg_color, fg=ModernStyle.TEXT_PRIMARY, font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM))
+                btn["title"].config(bg=bg_color, fg=ModernStyle.TEXT_PRIMARY, font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD))
                 if btn["desc"]:
                     btn["desc"].config(bg=bg_color, fg=ModernStyle.TEXT_MUTED)
     
@@ -584,7 +537,7 @@ class EconPaperApp:
         tk.Label(
             header,
             text=title,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XL, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XXL, "bold"),
             bg=ModernStyle.BG_MAIN,
             fg=ModernStyle.TEXT_PRIMARY
         ).pack(anchor="w")
@@ -592,7 +545,7 @@ class EconPaperApp:
         tk.Label(
             header,
             text=subtitle,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_MAIN,
             fg=ModernStyle.TEXT_SECONDARY
         ).pack(anchor="w", pady=(5, 0))
@@ -605,13 +558,13 @@ class EconPaperApp:
         
         text = scrolledtext.ScrolledText(
             container,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             wrap=tk.WORD,
             bg=ModernStyle.BG_INPUT,
             fg=ModernStyle.TEXT_PRIMARY,
             relief="flat",
-            padx=12,
-            pady=12,
+            padx=15,
+            pady=15,
             height=height,
             insertbackground=ModernStyle.PRIMARY,
             selectbackground=ModernStyle.PRIMARY_LIGHT,
@@ -627,13 +580,13 @@ class EconPaperApp:
         
         text = scrolledtext.ScrolledText(
             container,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             wrap=tk.WORD,
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY,
             relief="flat",
-            padx=12,
-            pady=12,
+            padx=15,
+            pady=15,
             height=height,
             state=tk.DISABLED
         )
@@ -646,38 +599,33 @@ class EconPaperApp:
         page = tk.Frame(self.content_frame, bg=ModernStyle.BG_MAIN)
         self.pages["diagnose"] = page
         
-        # 页面标题
         self._create_page_header(page, "论文诊断", "多维度 AI 分析论文质量，提供改进建议")
         
-        # 进度指示器
         self.progress_indicators["diagnose"] = ProgressIndicator(page, "正在分析论文...")
         
-        # 主内容区
         content = tk.Frame(page, bg=ModernStyle.BG_MAIN)
         content.pack(fill=tk.BOTH, expand=True, padx=ModernStyle.PADDING_XL, pady=(0, ModernStyle.PADDING_XL))
         
-        # 使用 PanedWindow 实现可拖拽分栏
         paned = tk.PanedWindow(content, orient=tk.HORIZONTAL, bg=ModernStyle.BG_MAIN, sashwidth=8, sashrelief=tk.FLAT)
         paned.pack(fill=tk.BOTH, expand=True)
         
         # 左侧输入
         left_panel = tk.Frame(paned, bg=ModernStyle.BG_MAIN)
         
-        # 工具栏
         toolbar = tk.Frame(left_panel, bg=ModernStyle.BG_MAIN)
-        toolbar.pack(fill=tk.X, pady=(0, 12))
+        toolbar.pack(fill=tk.X, pady=(0, 15))
         
         upload_btn = tk.Button(
             toolbar,
             text="📁 选择文件",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY,
             activebackground=ModernStyle.BG_HOVER,
             bd=0,
             cursor="hand2",
-            padx=15,
-            pady=8,
+            padx=18,
+            pady=10,
             command=lambda: self._select_file("diagnose")
         )
         upload_btn.pack(side=tk.LEFT)
@@ -685,54 +633,79 @@ class EconPaperApp:
         self.diag_file_label = tk.Label(
             toolbar,
             text="支持 PDF/Word 文档",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
             bg=ModernStyle.BG_MAIN,
             fg=ModernStyle.TEXT_MUTED,
-            padx=12
+            padx=15
         )
         self.diag_file_label.pack(side=tk.LEFT)
         
-        # 输入框
         tk.Label(
             left_panel,
             text="论文内容",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_MAIN,
             fg=ModernStyle.TEXT_PRIMARY
-        ).pack(anchor="w", pady=(0, 8))
+        ).pack(anchor="w", pady=(0, 10))
         
         input_container, self.diag_text = self._create_text_input(left_panel)
         input_container.pack(fill=tk.BOTH, expand=True)
         
-        # 诊断按钮
         btn_frame = tk.Frame(left_panel, bg=ModernStyle.BG_MAIN)
-        btn_frame.pack(fill=tk.X, pady=(15, 0))
+        btn_frame.pack(fill=tk.X, pady=(18, 0))
         
         ModernButton(
             btn_frame,
             text="开始诊断",
             command=self._run_diagnose,
-            width=140,
-            height=40
+            width=150,
+            height=45
         ).pack(side=tk.LEFT)
         
-        paned.add(left_panel, minsize=300)
+        # 添加文献推荐按钮
+        ModernButton(
+            btn_frame,
+            text="📚 相关文献",
+            command=self._recommend_literature,
+            width=130,
+            height=45,
+            bg_color=ModernStyle.INFO,
+            hover_color=ModernStyle.INFO
+        ).pack(side=tk.LEFT, padx=15)
+        
+        paned.add(left_panel, minsize=350)
         
         # 右侧结果
         right_panel = tk.Frame(paned, bg=ModernStyle.BG_MAIN)
         
+        result_header = tk.Frame(right_panel, bg=ModernStyle.BG_MAIN)
+        result_header.pack(fill=tk.X, pady=(0, 10))
+        
         tk.Label(
-            right_panel,
+            result_header,
             text="诊断报告",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_MAIN,
             fg=ModernStyle.TEXT_PRIMARY
-        ).pack(anchor="w", pady=(0, 8))
+        ).pack(side=tk.LEFT)
+        
+        # 添加导出按钮
+        tk.Button(
+            result_header,
+            text="📥 导出报告",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_SECONDARY,
+            bd=0,
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=lambda: self._export_result(self.diag_result.get("1.0", tk.END), "诊断报告")
+        ).pack(side=tk.RIGHT)
         
         result_container, self.diag_result = self._create_text_output(right_panel)
         result_container.pack(fill=tk.BOTH, expand=True)
         
-        paned.add(right_panel, minsize=300)
+        paned.add(right_panel, minsize=350)
         
         self.diag_file_path = None
         
@@ -749,21 +722,21 @@ class EconPaperApp:
         content.pack(fill=tk.BOTH, expand=True, padx=ModernStyle.PADDING_XL, pady=(0, ModernStyle.PADDING_XL))
         
         # 左侧配置面板
-        config_panel = tk.Frame(content, bg=ModernStyle.BG_SECONDARY, width=260)
+        config_panel = tk.Frame(content, bg=ModernStyle.BG_SECONDARY, width=280)
         config_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 20))
         config_panel.pack_propagate(False)
         
-        config_inner = tk.Frame(config_panel, bg=ModernStyle.BG_SECONDARY, padx=20, pady=20)
+        config_inner = tk.Frame(config_panel, bg=ModernStyle.BG_SECONDARY, padx=22, pady=22)
         config_inner.pack(fill=tk.BOTH, expand=True)
         
         # 优化阶段
         tk.Label(
             config_inner,
             text="优化阶段",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY
-        ).pack(anchor="w", pady=(0, 10))
+        ).pack(anchor="w", pady=(0, 12))
         
         self.opt_stage = tk.StringVar(value="submission")
         stages = [
@@ -785,16 +758,16 @@ class EconPaperApp:
                 selectcolor=ModernStyle.BG_SECONDARY,
                 font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
             )
-            rb.pack(anchor="w", pady=2)
+            rb.pack(anchor="w", pady=3)
         
         # 目标期刊
         tk.Label(
             config_inner,
             text="目标期刊",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY
-        ).pack(anchor="w", pady=(20, 10))
+        ).pack(anchor="w", pady=(22, 12))
         
         self.opt_journal = tk.StringVar(value="")
         journals = ["", "经济研究", "管理世界", "金融研究", "中国工业经济", "会计研究", "其他"]
@@ -803,7 +776,8 @@ class EconPaperApp:
             textvariable=self.opt_journal,
             values=journals,
             state="readonly",
-            width=22
+            width=24,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
         )
         journal_combo.pack(fill=tk.X)
         
@@ -811,10 +785,10 @@ class EconPaperApp:
         tk.Label(
             config_inner,
             text="优化章节",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY
-        ).pack(anchor="w", pady=(20, 10))
+        ).pack(anchor="w", pady=(22, 12))
         
         sections = [
             ("标题", "title"),
@@ -841,16 +815,16 @@ class EconPaperApp:
                 selectcolor=ModernStyle.BG_SECONDARY,
                 font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
             )
-            cb.pack(anchor="w", pady=1)
+            cb.pack(anchor="w", pady=2)
         
         # 文件上传
         tk.Label(
             config_inner,
             text="上传文件",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY
-        ).pack(anchor="w", pady=(20, 10))
+        ).pack(anchor="w", pady=(22, 12))
         
         tk.Button(
             config_inner,
@@ -859,6 +833,8 @@ class EconPaperApp:
             bg=ModernStyle.BG_MAIN,
             bd=1,
             relief="solid",
+            padx=15,
+            pady=8,
             command=lambda: self._select_file("optimize")
         ).pack(fill=tk.X)
         
@@ -868,41 +844,38 @@ class EconPaperApp:
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_MUTED,
-            wraplength=200
+            wraplength=220
         )
-        self.opt_file_label.pack(pady=5)
+        self.opt_file_label.pack(pady=8)
         
-        # 优化按钮
         ModernButton(
             config_inner,
             text="开始优化",
             command=self._run_optimize,
-            width=200,
-            height=40
-        ).pack(side=tk.BOTTOM, pady=10)
+            width=220,
+            height=45
+        ).pack(side=tk.BOTTOM, pady=12)
         
         # 右侧编辑区
         right_panel = tk.Frame(content, bg=ModernStyle.BG_MAIN)
         right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         
-        # 输入区
         tk.Label(
             right_panel,
             text="论文内容",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_MAIN
-        ).pack(anchor="w", pady=(0, 5))
+        ).pack(anchor="w", pady=(0, 8))
         
         input_container, self.opt_input = self._create_text_input(right_panel, height=12)
-        input_container.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+        input_container.pack(fill=tk.BOTH, expand=True, pady=(0, 18))
         
-        # 输出区
         tk.Label(
             right_panel,
             text="优化结果",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_MAIN
-        ).pack(anchor="w", pady=(0, 5))
+        ).pack(anchor="w", pady=(0, 8))
         
         output_container, self.opt_output = self._create_text_output(right_panel, height=12)
         output_container.pack(fill=tk.BOTH, expand=True)
@@ -921,15 +894,14 @@ class EconPaperApp:
         content = tk.Frame(page, bg=ModernStyle.BG_MAIN)
         content.pack(fill=tk.BOTH, expand=True, padx=ModernStyle.PADDING_XL, pady=(0, ModernStyle.PADDING_XL))
         
-        # 顶部参数栏
-        params_frame = tk.Frame(content, bg=ModernStyle.BG_SECONDARY, padx=20, pady=15)
-        params_frame.pack(fill=tk.X, pady=(0, 20))
+        # 参数栏
+        params_frame = tk.Frame(content, bg=ModernStyle.BG_SECONDARY, padx=22, pady=18)
+        params_frame.pack(fill=tk.X, pady=(0, 22))
         
-        # 处理强度
         tk.Label(
             params_frame,
             text="处理强度:",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY
         ).pack(side=tk.LEFT)
@@ -938,45 +910,41 @@ class EconPaperApp:
             params_frame,
             from_=1, to=5,
             orient=tk.HORIZONTAL,
-            length=150,
+            length=160,
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY,
             highlightthickness=0,
             troughcolor=ModernStyle.BORDER,
             activebackground=ModernStyle.PRIMARY,
-            sliderrelief=tk.FLAT
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
         )
         self.dedup_strength.set(3)
-        self.dedup_strength.pack(side=tk.LEFT, padx=10)
+        self.dedup_strength.pack(side=tk.LEFT, padx=12)
         
-        # 强度说明
-        strength_labels = tk.Frame(params_frame, bg=ModernStyle.BG_SECONDARY)
-        strength_labels.pack(side=tk.LEFT, padx=5)
         tk.Label(
-            strength_labels,
+            params_frame,
             text="1轻度 ←→ 5深度",
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_MUTED
-        ).pack()
+        ).pack(side=tk.LEFT, padx=8)
         
-        # 保留术语
         tk.Label(
             params_frame,
             text="保留术语:",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY
-        ).pack(side=tk.LEFT, padx=(30, 0))
+        ).pack(side=tk.LEFT, padx=(35, 0))
         
         self.dedup_terms = tk.Entry(
             params_frame,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
-            width=30,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            width=32,
             bg=ModernStyle.BG_MAIN,
             relief="flat"
         )
-        self.dedup_terms.pack(side=tk.LEFT, padx=10, ipady=5)
+        self.dedup_terms.pack(side=tk.LEFT, padx=12, ipady=6)
         self.dedup_terms.insert(0, "用逗号分隔，如: DID, PSM")
         self.dedup_terms.bind("<FocusIn>", lambda e: self.dedup_terms.delete(0, tk.END) if "逗号分隔" in self.dedup_terms.get() else None)
         
@@ -984,7 +952,6 @@ class EconPaperApp:
         text_frame = tk.Frame(content, bg=ModernStyle.BG_MAIN)
         text_frame.pack(fill=tk.BOTH, expand=True)
         
-        # 使用 PanedWindow
         paned = tk.PanedWindow(text_frame, orient=tk.HORIZONTAL, bg=ModernStyle.BG_MAIN, sashwidth=8)
         paned.pack(fill=tk.BOTH, expand=True)
         
@@ -994,20 +961,19 @@ class EconPaperApp:
         tk.Label(
             left_panel,
             text="原始文本",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_MAIN
-        ).pack(anchor="w", pady=(0, 5))
+        ).pack(anchor="w", pady=(0, 8))
         
         input_container, self.dedup_input = self._create_text_input(left_panel)
         input_container.pack(fill=tk.BOTH, expand=True)
         
-        paned.add(left_panel, minsize=300)
+        paned.add(left_panel, minsize=350)
         
         # 中间按钮
-        mid_panel = tk.Frame(paned, bg=ModernStyle.BG_MAIN, width=140)
+        mid_panel = tk.Frame(paned, bg=ModernStyle.BG_MAIN, width=160)
         mid_panel.pack_propagate(False)
         
-        # 居中按钮
         btn_container = tk.Frame(mid_panel, bg=ModernStyle.BG_MAIN)
         btn_container.place(relx=0.5, rely=0.5, anchor="center")
         
@@ -1022,35 +988,63 @@ class EconPaperApp:
                 btn_container,
                 text=text,
                 command=cmd,
-                width=110,
-                height=38,
+                width=130,
+                height=42,
                 bg_color=color,
                 hover_color=color
-            ).pack(pady=8)
+            ).pack(pady=10)
         
-        paned.add(mid_panel, minsize=140)
+        paned.add(mid_panel, minsize=160)
         
         # 右侧输出
         right_panel = tk.Frame(paned, bg=ModernStyle.BG_MAIN)
         
+        dedup_result_header = tk.Frame(right_panel, bg=ModernStyle.BG_MAIN)
+        dedup_result_header.pack(fill=tk.X, pady=(0, 8))
+        
         tk.Label(
-            right_panel,
+            dedup_result_header,
             text="改写结果",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_MAIN
-        ).pack(anchor="w", pady=(0, 5))
+        ).pack(side=tk.LEFT)
+        
+        tk.Button(
+            dedup_result_header,
+            text="📥 导出",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_SECONDARY,
+            bd=0,
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=lambda: self._export_result(self.dedup_output.get("1.0", tk.END), "改写结果")
+        ).pack(side=tk.RIGHT)
+        
+        # 添加复制按钮
+        tk.Button(
+            dedup_result_header,
+            text="📋 复制",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_SECONDARY,
+            bd=0,
+            padx=12,
+            pady=6,
+            cursor="hand2",
+            command=lambda: self._copy_to_clipboard(self.dedup_output.get("1.0", tk.END))
+        ).pack(side=tk.RIGHT, padx=8)
         
         output_container, self.dedup_output = self._create_text_output(right_panel)
         output_container.pack(fill=tk.BOTH, expand=True)
         
-        paned.add(right_panel, minsize=300)
+        paned.add(right_panel, minsize=350)
         
     def _create_search_page(self):
-        """创建学术搜索页面"""
+        """创建学术搜索页面 - 增强版：LLM辅助检索"""
         page = tk.Frame(self.content_frame, bg=ModernStyle.BG_MAIN)
         self.pages["search"] = page
         
-        self._create_page_header(page, "学术搜索", "检索 Google Scholar / 知网文献")
+        self._create_page_header(page, "学术搜索", "AI辅助文献检索 -覆盖中英文数据库")
         
         self.progress_indicators["search"] = ProgressIndicator(page, "正在搜索文献...")
         
@@ -1058,52 +1052,177 @@ class EconPaperApp:
         content.pack(fill=tk.BOTH, expand=True, padx=ModernStyle.PADDING_XL, pady=(0, ModernStyle.PADDING_XL))
         
         # 搜索栏
-        search_frame = tk.Frame(content, bg=ModernStyle.BG_SECONDARY, padx=20, pady=15)
-        search_frame.pack(fill=tk.X, pady=(0, 20))
+        search_frame = tk.Frame(content, bg=ModernStyle.BG_SECONDARY, padx=22, pady=18)
+        search_frame.pack(fill=tk.X, pady=(0, 15))
         
         tk.Label(
             search_frame,
             text="🔍",
-            font=(ModernStyle.FONT_FAMILY, 16),
+            font=(ModernStyle.FONT_FAMILY, 18),
             bg=ModernStyle.BG_SECONDARY
-        ).pack(side=tk.LEFT, padx=(0, 10))
+        ).pack(side=tk.LEFT, padx=(0, 12))
         
         self.search_query = tk.Entry(
             search_frame,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_LG),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY,
             relief="flat",
-            width=50
+            width=40
         )
-        self.search_query.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=5)
+        self.search_query.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=6)
         self.search_query.insert(0, "数字经济 企业创新")
         
-        self.search_source = tk.StringVar(value="Google Scholar")
+        # AI辅助按钮
+        ModernButton(
+            search_frame,
+            text="🤖 AI扩展关键词",
+            command=self._ai_expand_keywords,
+            width=140,
+            height=40,
+            bg_color=ModernStyle.INFO,
+            hover_color=ModernStyle.INFO
+        ).pack(side=tk.LEFT, padx=12)
+        
+        self.search_source = tk.StringVar(value="全部")
         source_combo = ttk.Combobox(
             search_frame,
             textvariable=self.search_source,
-            values=["Google Scholar", "知网 CNKI"],
+            values=["全部", "Google Scholar", "知网 CNKI"],
             state="readonly",
-            width=15
+            width=14,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
         )
-        source_combo.pack(side=tk.LEFT, padx=15)
+        source_combo.pack(side=tk.LEFT, padx=12)
         
         ModernButton(
             search_frame,
             text="搜索",
             command=self._run_search,
-            width=80,
-            height=36
+            width=100,
+            height=40
         ).pack(side=tk.LEFT)
+        
+        # 筛选选项
+        filter_frame = tk.Frame(content, bg=ModernStyle.BG_SECONDARY, padx=22, pady=12)
+        filter_frame.pack(fill=tk.X, pady=(0, 22))
+        
+        self.enable_ai_filter = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+            filter_frame,
+            text="✨ AI智能筛选",
+            variable=self.enable_ai_filter,
+            bg=ModernStyle.BG_SECONDARY,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
+        ).pack(side=tk.LEFT, padx=12)
+        
+        tk.Label(
+            filter_frame,
+            text="🔑 Google认证:",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_PRIMARY
+        ).pack(side=tk.LEFT, padx=(10, 8))
+        
+        self.gs_auth_btn = tk.Button(
+            filter_frame,
+            text="去认证",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+            bg=ModernStyle.BG_MAIN,
+            bd=1,
+            relief="solid",
+            padx=10,
+            command=self._run_gs_auth
+        )
+        self.gs_auth_btn.pack(side=tk.LEFT, padx=5)
+        
+        self._check_gs_auth_status()
+
+        tk.Label(
+            filter_frame,
+            text="结果数量:",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_PRIMARY
+        ).pack(side=tk.LEFT, padx=(20, 8))
+        
+        self.search_limit = tk.Scale(
+            filter_frame,
+            from_=5, to=30,
+            orient=tk.HORIZONTAL,
+            length=120,
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_PRIMARY,
+            highlightthickness=0,
+            troughcolor=ModernStyle.BORDER,
+            activebackground=ModernStyle.PRIMARY,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS)
+        )
+        self.search_limit.set(15)
+        self.search_limit.pack(side=tk.LEFT, padx=8)
+        
+        tk.Label(
+            filter_frame,
+            text="💡 启用AI筛选可从大量结果中智能选出最相关的文献",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_MUTED
+        ).pack(side=tk.LEFT, padx=18)
+        
+        # 期刊级别筛选
+        quality_frame = tk.Frame(content, bg=ModernStyle.BG_SECONDARY, padx=22, pady=12)
+        quality_frame.pack(fill=tk.X, pady=(0, 15))
+        
+        tk.Label(
+            quality_frame,
+            text="📊 期刊级别筛选:",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_PRIMARY
+        ).pack(side=tk.LEFT, padx=(0, 12))
+        
+        self.filter_cssci = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+            quality_frame,
+            text="仅CSSCI/北核",
+            variable=self.filter_cssci,
+            bg=ModernStyle.BG_SECONDARY,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
+        ).pack(side=tk.LEFT, padx=8)
+        
+        self.filter_ssci = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+            quality_frame,
+            text="仅SSCI Q1/Q2",
+            variable=self.filter_ssci,
+            bg=ModernStyle.BG_SECONDARY,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
+        ).pack(side=tk.LEFT, padx=8)
+        
+        self.show_rank_info = tk.BooleanVar(value=True)
+        tk.Checkbutton(
+            quality_frame,
+            text="显示期刊级别",
+            variable=self.show_rank_info,
+            bg=ModernStyle.BG_SECONDARY,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
+        ).pack(side=tk.LEFT, padx=8)
+        
+        tk.Label(
+            quality_frame,
+            text="(使用 Easy Scholar 查询)",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_MUTED
+        ).pack(side=tk.LEFT, padx=12)
         
         # 结果区
         tk.Label(
             content,
             text="搜索结果",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_MAIN
-        ).pack(anchor="w", pady=(0, 8))
+        ).pack(anchor="w", pady=(0, 10))
         
         result_container, self.search_result = self._create_text_output(content)
         result_container.pack(fill=tk.BOTH, expand=True)
@@ -1129,32 +1248,46 @@ class EconPaperApp:
         tk.Label(
             left_panel,
             text="审稿意见",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_MAIN
-        ).pack(anchor="w", pady=(0, 5))
+        ).pack(anchor="w", pady=(0, 8))
         
         comments_container, self.rev_comments = self._create_text_input(left_panel, height=12)
-        comments_container.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
+        comments_container.pack(fill=tk.BOTH, expand=True, pady=(0, 18))
         
         tk.Label(
             left_panel,
             text="论文摘要（可选）",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_MAIN
-        ).pack(anchor="w", pady=(0, 5))
+        ).pack(anchor="w", pady=(0, 8))
         
         summary_container, self.rev_summary = self._create_text_input(left_panel, height=6)
-        summary_container.pack(fill=tk.X, pady=(0, 15))
+        summary_container.pack(fill=tk.X, pady=(0, 18))
+        
+        rev_btn_frame = tk.Frame(left_panel, bg=ModernStyle.BG_MAIN)
+        rev_btn_frame.pack(fill=tk.X)
         
         ModernButton(
-            left_panel,
+            rev_btn_frame,
             text="生成回应策略",
             command=self._run_revision,
-            width=160,
-            height=40
-        ).pack(anchor="w")
+            width=180,
+            height=45
+        ).pack(side=tk.LEFT)
         
-        paned.add(left_panel, minsize=350)
+        # 添加文献支撑按钮
+        ModernButton(
+            rev_btn_frame,
+            text="📚 找支撑文献",
+            command=self._find_supporting_literature,
+            width=140,
+            height=45,
+            bg_color=ModernStyle.INFO,
+            hover_color=ModernStyle.INFO
+        ).pack(side=tk.LEFT, padx=15)
+        
+        paned.add(left_panel, minsize=400)
         
         # 右侧结果
         right_panel = tk.Frame(paned, bg=ModernStyle.BG_MAIN)
@@ -1162,17 +1295,17 @@ class EconPaperApp:
         tk.Label(
             right_panel,
             text="回应建议",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM, "bold"),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
             bg=ModernStyle.BG_MAIN
-        ).pack(anchor="w", pady=(0, 8))
+        ).pack(anchor="w", pady=(0, 10))
         
         output_container, self.rev_output = self._create_text_output(right_panel)
         output_container.pack(fill=tk.BOTH, expand=True)
         
-        paned.add(right_panel, minsize=350)
+        paned.add(right_panel, minsize=400)
         
     def _create_settings_page(self):
-        """创建设置页面"""
+        """创建设置页面 - 优化版：分离API配置 + 模型拉取"""
         page = tk.Frame(self.content_frame, bg=ModernStyle.BG_MAIN)
         self.pages["settings"] = page
         
@@ -1196,7 +1329,6 @@ class EconPaperApp:
         
         canvas.configure(yscrollcommand=scrollbar.set)
         
-        # 鼠标滚轮
         def _on_mousewheel(event):
             canvas.yview_scroll(int(-1*(event.delta/120)), "units")
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
@@ -1206,262 +1338,428 @@ class EconPaperApp:
         
         content = scrollable_frame
         
-        # 供应商选择
+        # ============ 1. 语言模型配置 ============
         section1 = tk.Frame(content, bg=ModernStyle.BG_MAIN)
-        section1.pack(fill=tk.X, pady=(0, 25))
+        section1.pack(fill=tk.X, pady=(0, 30))
+        
+        header1 = tk.Frame(section1, bg=ModernStyle.BG_MAIN)
+        header1.pack(fill=tk.X, pady=(0, 15))
         
         tk.Label(
-            section1,
-            text="模型供应商",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_LG, "bold"),
-            bg=ModernStyle.BG_MAIN,
-            fg=ModernStyle.TEXT_PRIMARY
-        ).pack(anchor="w", pady=(0, 12))
-        
-        provider_frame = tk.Frame(section1, bg=ModernStyle.BG_SECONDARY, padx=20, pady=15)
-        provider_frame.pack(fill=tk.X)
-        
-        self.provider_var = tk.StringVar(value="OpenAI 兼容")
-        providers = ["OpenAI 兼容", "DeepSeek", "硅基流动", "Ollama 本地", "自定义"]
-        
-        provider_combo = ttk.Combobox(
-            provider_frame,
-            textvariable=self.provider_var,
-            values=providers,
-            state="readonly",
-            width=25
-        )
-        provider_combo.pack(side=tk.LEFT)
-        provider_combo.bind("<<ComboboxSelected>>", self._on_provider_change)
-        
-        tk.Label(
-            provider_frame,
-            text="💡 切换供应商可自动填充 API 地址",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
-            bg=ModernStyle.BG_SECONDARY,
-            fg=ModernStyle.TEXT_MUTED
-        ).pack(side=tk.LEFT, padx=20)
-        
-        # API 配置
-        section2 = tk.Frame(content, bg=ModernStyle.BG_MAIN)
-        section2.pack(fill=tk.X, pady=(0, 25))
-        
-        header2 = tk.Frame(section2, bg=ModernStyle.BG_MAIN)
-        header2.pack(fill=tk.X, pady=(0, 12))
-        
-        tk.Label(
-            header2,
-            text="API 配置",
+            header1,
+            text="🤖 语言模型配置 (LLM)",
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_LG, "bold"),
             bg=ModernStyle.BG_MAIN,
             fg=ModernStyle.TEXT_PRIMARY
         ).pack(side=tk.LEFT)
         
         tk.Button(
-            header2,
+            header1,
             text="🔗 测试连接",
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
             bg=ModernStyle.BG_SECONDARY,
             bd=0,
-            padx=15,
-            pady=5,
+            padx=18,
+            pady=8,
             cursor="hand2",
-            command=self._test_connection
+            command=self._test_llm_connection
         ).pack(side=tk.RIGHT)
         
-        api_frame = tk.Frame(section2, bg=ModernStyle.BG_SECONDARY, padx=20, pady=20)
-        api_frame.pack(fill=tk.X)
+        llm_frame = tk.Frame(section1, bg=ModernStyle.BG_SECONDARY, padx=25, pady=25)
+        llm_frame.pack(fill=tk.X)
         
-        # API 地址
+        # 供应商选择
+        row1 = tk.Frame(llm_frame, bg=ModernStyle.BG_SECONDARY)
+        row1.pack(fill=tk.X, pady=10)
+        
         tk.Label(
-            api_frame,
-            text="API 地址:",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            row1,
+            text="供应商:",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY,
             width=12,
             anchor="w"
-        ).grid(row=0, column=0, pady=8, sticky="w")
+        ).pack(side=tk.LEFT)
+        
+        self.llm_provider_var = tk.StringVar(value="OpenAI 兼容")
+        providers = ["OpenAI 兼容", "DeepSeek", "硅基流动", "Ollama 本地", "自定义"]
+        
+        provider_combo = ttk.Combobox(
+            row1,
+            textvariable=self.llm_provider_var,
+            values=providers,
+            state="readonly",
+            width=25,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
+        )
+        provider_combo.pack(side=tk.LEFT, padx=12)
+        provider_combo.bind("<<ComboboxSelected>>", self._on_llm_provider_change)
+        
+        tk.Label(
+            row1,
+            text="💡 切换供应商自动填充 API 地址",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_MUTED
+        ).pack(side=tk.LEFT, padx=18)
+        
+        # API 地址
+        row2 = tk.Frame(llm_frame, bg=ModernStyle.BG_SECONDARY)
+        row2.pack(fill=tk.X, pady=10)
+        
+        tk.Label(
+            row2,
+            text="API 地址:",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_PRIMARY,
+            width=12,
+            anchor="w"
+        ).pack(side=tk.LEFT)
         
         self.setting_llm_base = tk.Entry(
-            api_frame,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            row2,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_MAIN,
             relief="flat",
             width=55
         )
-        self.setting_llm_base.grid(row=0, column=1, sticky="we", padx=10, ipady=6)
+        self.setting_llm_base.pack(side=tk.LEFT, padx=12, ipady=8)
         
         # API 密钥
+        row3 = tk.Frame(llm_frame, bg=ModernStyle.BG_SECONDARY)
+        row3.pack(fill=tk.X, pady=10)
+        
         tk.Label(
-            api_frame,
+            row3,
             text="API 密钥:",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY,
             width=12,
             anchor="w"
-        ).grid(row=1, column=0, pady=8, sticky="w")
-        
-        key_frame = tk.Frame(api_frame, bg=ModernStyle.BG_SECONDARY)
-        key_frame.grid(row=1, column=1, sticky="we", padx=10)
+        ).pack(side=tk.LEFT)
         
         self.setting_llm_key = tk.Entry(
-            key_frame,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            row3,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_MAIN,
             relief="flat",
+            width=45,
             show="•"
         )
-        self.setting_llm_key.pack(side=tk.LEFT, fill=tk.X, expand=True, ipady=6)
+        self.setting_llm_key.pack(side=tk.LEFT, padx=12, ipady=8)
         
-        self.show_key = tk.BooleanVar(value=False)
+        self.show_llm_key = tk.BooleanVar(value=False)
         tk.Checkbutton(
-            key_frame,
+            row3,
             text="显示",
-            variable=self.show_key,
-            command=self._toggle_key_visibility,
+            variable=self.show_llm_key,
+            command=lambda: self.setting_llm_key.config(show="" if self.show_llm_key.get() else "•"),
             bg=ModernStyle.BG_SECONDARY,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS)
-        ).pack(side=tk.LEFT, padx=10)
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
+        ).pack(side=tk.LEFT, padx=12)
         
         # 模型选择
-        section3 = tk.Frame(content, bg=ModernStyle.BG_MAIN)
-        section3.pack(fill=tk.X, pady=(0, 25))
+        row4 = tk.Frame(llm_frame, bg=ModernStyle.BG_SECONDARY)
+        row4.pack(fill=tk.X, pady=10)
         
         tk.Label(
-            section3,
-            text="模型选择",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_LG, "bold"),
-            bg=ModernStyle.BG_MAIN,
-            fg=ModernStyle.TEXT_PRIMARY
-        ).pack(anchor="w", pady=(0, 12))
-        
-        model_frame = tk.Frame(section3, bg=ModernStyle.BG_SECONDARY, padx=20, pady=20)
-        model_frame.pack(fill=tk.X)
-        
-        # LLM 模型
-        tk.Label(
-            model_frame,
-            text="语言模型:",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            row4,
+            text="模型名称:",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.TEXT_PRIMARY,
-            width=15,
+            width=12,
             anchor="w"
-        ).grid(row=0, column=0, pady=10, sticky="w")
+        ).pack(side=tk.LEFT)
         
         self.setting_llm_model = ttk.Combobox(
-            model_frame,
+            row4,
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
-            width=40,
-            values=["gpt-4o", "gpt-4o-mini", "deepseek-chat", "deepseek-coder", "Qwen/Qwen2.5-72B-Instruct"]
+            width=35,
+            values=["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "deepseek-chat", "deepseek-coder", 
+                   "Qwen/Qwen2.5-72B-Instruct", "claude-3-5-sonnet-20241022"]
         )
-        self.setting_llm_model.grid(row=0, column=1, sticky="w", padx=10)
+        self.setting_llm_model.pack(side=tk.LEFT, padx=12)
+        
+        tk.Button(
+            row4,
+            text="📥 拉取模型列表",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_MAIN,
+            bd=0,
+            padx=15,
+            pady=6,
+            cursor="hand2",
+            command=self._fetch_llm_models
+        ).pack(side=tk.LEFT, padx=12)
         
         self.llm_status = tk.Label(
-            model_frame,
+            row4,
             text="● 未配置",
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
             bg=ModernStyle.BG_SECONDARY,
             fg=ModernStyle.WARNING
         )
-        self.llm_status.grid(row=0, column=2, padx=10)
+        self.llm_status.pack(side=tk.LEFT, padx=12)
         
-        # 嵌入模型
+        # ============ 2. 嵌入模型配置 ============
+        section2 = tk.Frame(content, bg=ModernStyle.BG_MAIN)
+        section2.pack(fill=tk.X, pady=(0, 30))
+        
+        header2 = tk.Frame(section2, bg=ModernStyle.BG_MAIN)
+        header2.pack(fill=tk.X, pady=(0, 15))
+        
         tk.Label(
-            model_frame,
-            text="嵌入模型:",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
-            bg=ModernStyle.BG_SECONDARY,
-            fg=ModernStyle.TEXT_PRIMARY,
-            width=15,
-            anchor="w"
-        ).grid(row=1, column=0, pady=10, sticky="w")
+            header2,
+            text="📊 嵌入模型配置 (Embedding)",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_LG, "bold"),
+            bg=ModernStyle.BG_MAIN,
+            fg=ModernStyle.TEXT_PRIMARY
+        ).pack(side=tk.LEFT)
         
-        self.setting_embed_model = ttk.Combobox(
-            model_frame,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
-            width=40,
-            values=["text-embedding-3-small", "text-embedding-3-large", "BAAI/bge-m3"]
-        )
-        self.setting_embed_model.grid(row=1, column=1, sticky="w", padx=10)
+        # 嵌入模型启用开关 (可选功能)
+        self.enable_embedding = tk.BooleanVar(value=False)
         
         self.use_same_api = tk.BooleanVar(value=True)
         tk.Checkbutton(
-            model_frame,
-            text="使用同一API",
+            header2,
+            text="使用与语言模型相同的 API 配置",
             variable=self.use_same_api,
-            bg=ModernStyle.BG_SECONDARY,
+            command=self._toggle_embed_api,
+            bg=ModernStyle.BG_MAIN,
             font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM)
-        ).grid(row=1, column=2, padx=10)
+        ).pack(side=tk.RIGHT)
         
-        # 独立嵌入API配置（隐藏）
-        self.embed_api_frame = tk.Frame(section3, bg=ModernStyle.BG_INPUT, padx=20, pady=15)
+        self.embed_frame = tk.Frame(section2, bg=ModernStyle.BG_SECONDARY, padx=25, pady=25)
+        self.embed_frame.pack(fill=tk.X)
+        
+        # 嵌入模型 API 地址
+        row_e1 = tk.Frame(self.embed_frame, bg=ModernStyle.BG_SECONDARY)
+        row_e1.pack(fill=tk.X, pady=10)
         
         tk.Label(
-            self.embed_api_frame,
-            text="嵌入API地址:",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
-            bg=ModernStyle.BG_INPUT
-        ).grid(row=0, column=0, pady=5, sticky="w")
+            row_e1,
+            text="API 地址:",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_PRIMARY,
+            width=12,
+            anchor="w"
+        ).pack(side=tk.LEFT)
         
         self.setting_embed_base = tk.Entry(
-            self.embed_api_frame,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            row_e1,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_MAIN,
             relief="flat",
-            width=50
+            width=55
         )
-        self.setting_embed_base.grid(row=0, column=1, padx=10, ipady=5)
+        self.setting_embed_base.pack(side=tk.LEFT, padx=12, ipady=8)
+        
+        # 嵌入模型 API 密钥
+        row_e2 = tk.Frame(self.embed_frame, bg=ModernStyle.BG_SECONDARY)
+        row_e2.pack(fill=tk.X, pady=10)
         
         tk.Label(
-            self.embed_api_frame,
-            text="嵌入API密钥:",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
-            bg=ModernStyle.BG_INPUT
-        ).grid(row=1, column=0, pady=5, sticky="w")
+            row_e2,
+            text="API 密钥:",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_PRIMARY,
+            width=12,
+            anchor="w"
+        ).pack(side=tk.LEFT)
         
         self.setting_embed_key = tk.Entry(
-            self.embed_api_frame,
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            row_e2,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_MAIN,
             relief="flat",
-            width=50,
+            width=45,
             show="•"
         )
-        self.setting_embed_key.grid(row=1, column=1, padx=10, ipady=5)
+        self.setting_embed_key.pack(side=tk.LEFT, padx=12, ipady=8)
         
-        # 保存按钮
+        # 嵌入模型选择
+        row_e3 = tk.Frame(self.embed_frame, bg=ModernStyle.BG_SECONDARY)
+        row_e3.pack(fill=tk.X, pady=10)
+        
+        tk.Label(
+            row_e3,
+            text="模型名称:",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_PRIMARY,
+            width=12,
+            anchor="w"
+        ).pack(side=tk.LEFT)
+        
+        self.setting_embed_model = ttk.Combobox(
+            row_e3,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            width=35,
+            values=["text-embedding-3-small", "text-embedding-3-large", "text-embedding-ada-002",
+                   "BAAI/bge-m3", "BAAI/bge-large-zh-v1.5"]
+        )
+        self.setting_embed_model.pack(side=tk.LEFT, padx=12)
+        
+        tk.Button(
+            row_e3,
+            text="📥 拉取模型列表",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_MAIN,
+            bd=0,
+            padx=15,
+            pady=6,
+            cursor="hand2",
+            command=self._fetch_embed_models
+        ).pack(side=tk.LEFT, padx=12)
+        
+        # 初始状态：隐藏独立配置
+        self._toggle_embed_api()
+        
+        # ============ 3. 保存按钮 ============
         btn_frame = tk.Frame(content, bg=ModernStyle.BG_MAIN)
-        btn_frame.pack(fill=tk.X, pady=25)
+        btn_frame.pack(fill=tk.X, pady=30)
         
         ModernButton(
             btn_frame,
-            text="保存配置",
+            text="💾 保存配置",
             command=self._save_settings,
-            width=140,
-            height=42
+            width=160,
+            height=48
         ).pack(side=tk.LEFT)
         
         tk.Button(
             btn_frame,
             text="恢复默认",
-            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
             bg=ModernStyle.BG_SECONDARY,
             bd=0,
-            padx=20,
-            pady=10,
+            padx=25,
+            pady=12,
             cursor="hand2",
             command=self._reset_settings
-        ).pack(side=tk.LEFT, padx=15)
+        ).pack(side=tk.LEFT, padx=18)
         
         # 加载现有设置
         self._load_settings()
     
-    def _on_provider_change(self, event=None):
+    def _toggle_embed_api(self):
+        """切换嵌入模型配置显示"""
+        # 清除现有内容
+        for widget in self.embed_frame.winfo_children():
+            if isinstance(widget, tk.Frame):
+                widget.destroy()
+        
+        # 嵌入模型为可选功能，默认使用语言模型的 API
+        if self.use_same_api.get():
+            # 使用相同API - 只显示模型选择
+            row_e3 = tk.Frame(self.embed_frame, bg=ModernStyle.BG_SECONDARY)
+            row_e3.pack(fill=tk.X, pady=10)
+            
+            tk.Label(
+                row_e3,
+                text="模型名称:",
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+                bg=ModernStyle.BG_SECONDARY,
+                fg=ModernStyle.TEXT_PRIMARY,
+                width=12,
+                anchor="w"
+            ).pack(side=tk.LEFT)
+            
+            self.setting_embed_model = ttk.Combobox(
+                row_e3,
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+                width=35,
+                values=["text-embedding-3-small", "text-embedding-3-large", "BAAI/bge-m3"]
+            )
+            self.setting_embed_model.pack(side=tk.LEFT, padx=12)
+            
+            tk.Label(
+                row_e3,
+                text="💡 将使用语言模型的 API 地址和密钥",
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+                bg=ModernStyle.BG_SECONDARY,
+                fg=ModernStyle.TEXT_MUTED
+            ).pack(side=tk.LEFT, padx=18)
+        else:
+            # 使用独立API - 显示完整配置
+            # API 地址
+            row_e1 = tk.Frame(self.embed_frame, bg=ModernStyle.BG_SECONDARY)
+            row_e1.pack(fill=tk.X, pady=10)
+            
+            tk.Label(
+                row_e1,
+                text="API 地址:",
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+                bg=ModernStyle.BG_SECONDARY,
+                fg=ModernStyle.TEXT_PRIMARY,
+                width=12,
+                anchor="w"
+            ).pack(side=tk.LEFT)
+            
+            self.setting_embed_base = tk.Entry(
+                row_e1,
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+                bg=ModernStyle.BG_MAIN,
+                relief="flat",
+                width=55
+            )
+            self.setting_embed_base.pack(side=tk.LEFT, padx=12, ipady=8)
+            
+            # API 密钥
+            row_e2 = tk.Frame(self.embed_frame, bg=ModernStyle.BG_SECONDARY)
+            row_e2.pack(fill=tk.X, pady=10)
+            
+            tk.Label(
+                row_e2,
+                text="API 密钥:",
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+                bg=ModernStyle.BG_SECONDARY,
+                fg=ModernStyle.TEXT_PRIMARY,
+                width=12,
+                anchor="w"
+            ).pack(side=tk.LEFT)
+            
+            self.setting_embed_key = tk.Entry(
+                row_e2,
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+                bg=ModernStyle.BG_MAIN,
+                relief="flat",
+                width=45,
+                show="•"
+            )
+            self.setting_embed_key.pack(side=tk.LEFT, padx=12, ipady=8)
+            
+            # 模型选择
+            row_e3 = tk.Frame(self.embed_frame, bg=ModernStyle.BG_SECONDARY)
+            row_e3.pack(fill=tk.X, pady=10)
+            
+            tk.Label(
+                row_e3,
+                text="模型名称:",
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+                bg=ModernStyle.BG_SECONDARY,
+                fg=ModernStyle.TEXT_PRIMARY,
+                width=12,
+                anchor="w"
+            ).pack(side=tk.LEFT)
+            
+            self.setting_embed_model = ttk.Combobox(
+                row_e3,
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+                width=35,
+                values=["text-embedding-3-small", "text-embedding-3-large", "BAAI/bge-m3"]
+            )
+            self.setting_embed_model.pack(side=tk.LEFT, padx=12)
+    
+    def _on_llm_provider_change(self, event=None):
         """切换供应商时自动填充"""
-        provider = self.provider_var.get()
+        provider = self.llm_provider_var.get()
         
         presets = {
             "OpenAI 兼容": ("https://api.openai.com/v1", "gpt-4o-mini", "text-embedding-3-small"),
@@ -1478,15 +1776,66 @@ class EconPaperApp:
             self.setting_llm_model.set(model)
             self.setting_embed_model.set(embed)
     
-    def _toggle_key_visibility(self):
-        """切换密钥显示"""
-        if self.show_key.get():
-            self.setting_llm_key.config(show="")
-        else:
-            self.setting_llm_key.config(show="•")
+    def _fetch_llm_models(self):
+        """拉取语言模型列表"""
+        api_base = self.setting_llm_base.get().strip()
+        api_key = self.setting_llm_key.get().strip()
+        
+        if not api_base or not api_key:
+            messagebox.showwarning("提示", "请先填写 API 地址和密钥")
+            return
+        
+        def do_fetch():
+            try:
+                from openai import OpenAI
+                client = OpenAI(base_url=api_base, api_key=api_key)
+                models = client.models.list()
+                
+                model_ids = [m.id for m in models.data]
+                model_ids.sort()
+                
+                self._safe_update(lambda: self.setting_llm_model.config(values=model_ids))
+                self._safe_update(lambda: messagebox.showinfo("成功", f"✅ 获取到 {len(model_ids)} 个模型"))
+            except Exception as e:
+                self._safe_update(lambda: messagebox.showerror("失败", f"❌ 拉取失败:\n{str(e)}"))
+        
+        self._run_in_thread(do_fetch)
     
-    def _test_connection(self):
-        """测试API连接"""
+    def _fetch_embed_models(self):
+        """拉取嵌入模型列表"""
+        if self.use_same_api.get():
+            api_base = self.setting_llm_base.get().strip()
+            api_key = self.setting_llm_key.get().strip()
+        else:
+            api_base = self.setting_embed_base.get().strip()
+            api_key = self.setting_embed_key.get().strip()
+        
+        if not api_base or not api_key:
+            messagebox.showwarning("提示", "请先填写 API 地址和密钥")
+            return
+        
+        def do_fetch():
+            try:
+                from openai import OpenAI
+                client = OpenAI(base_url=api_base, api_key=api_key)
+                models = client.models.list()
+                
+                # 过滤嵌入模型
+                embed_ids = [m.id for m in models.data if 'embed' in m.id.lower() or 'bge' in m.id.lower()]
+                embed_ids.sort()
+                
+                if embed_ids:
+                    self._safe_update(lambda: self.setting_embed_model.config(values=embed_ids))
+                    self._safe_update(lambda: messagebox.showinfo("成功", f"✅ 获取到 {len(embed_ids)} 个嵌入模型"))
+                else:
+                    self._safe_update(lambda: messagebox.showinfo("提示", "未找到嵌入模型，请手动输入"))
+            except Exception as e:
+                self._safe_update(lambda: messagebox.showerror("失败", f"❌ 拉取失败:\n{str(e)}"))
+        
+        self._run_in_thread(do_fetch)
+    
+    def _test_llm_connection(self):
+        """测试语言模型连接"""
         api_base = self.setting_llm_base.get().strip()
         api_key = self.setting_llm_key.get().strip()
         model = self.setting_llm_model.get().strip()
@@ -1504,20 +1853,13 @@ class EconPaperApp:
                     messages=[{"role": "user", "content": "Hi"}],
                     max_tokens=5
                 )
-                self._safe_update(lambda: self._update_status(True))
+                self._safe_update(lambda: self.llm_status.config(text="● 已连接", fg=ModernStyle.SUCCESS))
                 self._safe_update(lambda: messagebox.showinfo("成功", "✅ 连接成功！API 配置有效。"))
             except Exception as e:
-                self._safe_update(lambda: self._update_status(False))
+                self._safe_update(lambda: self.llm_status.config(text="● 连接失败", fg=ModernStyle.ERROR))
                 self._safe_update(lambda: messagebox.showerror("失败", f"❌ 连接失败:\n{str(e)}"))
         
         self._run_in_thread(do_test)
-    
-    def _update_status(self, success: bool):
-        """更新状态显示"""
-        if success:
-            self.llm_status.config(text="● 已连接", fg=ModernStyle.SUCCESS)
-        else:
-            self.llm_status.config(text="● 连接失败", fg=ModernStyle.ERROR)
     
     def _reset_settings(self):
         """重置设置"""
@@ -1525,13 +1867,52 @@ class EconPaperApp:
             self.setting_llm_base.delete(0, tk.END)
             self.setting_llm_key.delete(0, tk.END)
             self.setting_llm_model.set("")
-            self.setting_embed_base.delete(0, tk.END)
-            self.setting_embed_key.delete(0, tk.END)
-            self.setting_embed_model.set("")
-            self.provider_var.set("OpenAI 兼容")
+            # 安全访问嵌入模型控件
+            if hasattr(self, 'setting_embed_base') and hasattr(self.setting_embed_base, 'winfo_exists') and self.setting_embed_base.winfo_exists():
+                self.setting_embed_base.delete(0, tk.END)
+            if hasattr(self, 'setting_embed_key') and hasattr(self.setting_embed_key, 'winfo_exists') and self.setting_embed_key.winfo_exists():
+                self.setting_embed_key.delete(0, tk.END)
+            if hasattr(self, 'setting_embed_model'):
+                self.setting_embed_model.set("")
+            self.llm_provider_var.set("OpenAI 兼容")
             self.llm_status.config(text="● 未配置", fg=ModernStyle.WARNING)
     
     # ==================== 核心功能方法 ====================
+    
+    def _export_result(self, content: str, default_name: str):
+        """导出结果到文件"""
+        if not content or not content.strip():
+            messagebox.showwarning("提示", "没有可导出的内容")
+            return
+        
+        file_path = filedialog.asksaveasfilename(
+            title="导出结果",
+            defaultextension=".txt",
+            filetypes=[
+                ("文本文件", "*.txt"),
+                ("Markdown", "*.md"),
+                ("所有文件", "*.*")
+            ],
+            initialfile=f"{default_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        )
+        
+        if file_path:
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                messagebox.showinfo("成功", f"✅ 已导出到:\n{file_path}")
+            except Exception as e:
+                messagebox.showerror("失败", f"导出失败: {e}")
+    
+    def _copy_to_clipboard(self, content: str):
+        """复制内容到剪贴板"""
+        if not content or not content.strip():
+            messagebox.showwarning("提示", "没有可复制的内容")
+            return
+        
+        self.root.clipboard_clear()
+        self.root.clipboard_append(content.strip())
+        messagebox.showinfo("成功", "✅ 已复制到剪贴板")
     
     def _select_file(self, target: str):
         """选择文件"""
@@ -1555,7 +1936,7 @@ class EconPaperApp:
                 self.opt_file_label.config(text=f"✓ {file_name}", fg=ModernStyle.SUCCESS)
     
     def _set_result(self, widget: scrolledtext.ScrolledText, text: str):
-        """设置结果文本（线程安全）"""
+        """设置结果文本"""
         def update():
             widget.config(state=tk.NORMAL)
             widget.delete("1.0", tk.END)
@@ -1598,7 +1979,6 @@ class EconPaperApp:
                 messagebox.showwarning("提示", "请上传文件或粘贴论文内容")
                 return
         
-        # 显示进度
         self.progress_indicators["diagnose"].start("正在分析论文结构...")
         self._set_result(self.diag_result, "")
         
@@ -1731,7 +2111,6 @@ class EconPaperApp:
 
 {'='*50}
 
-📊 处理报告
 {report}
 """
                 self._set_result(self.dedup_output, result_text)
@@ -1767,7 +2146,6 @@ class EconPaperApp:
 
 {'='*50}
 
-📊 处理报告
 {report}
 """
                 self._set_result(self.dedup_output, result_text)
@@ -1814,10 +2192,8 @@ class EconPaperApp:
 
 {'='*50}
 
-📊 降重报告
 {dedup_engine.get_dedup_report(dedup_result)}
 
-📊 降AI报告
 {deai_engine.get_report(deai_result)}
 """
                 self._set_result(self.dedup_output, result_text)
@@ -1829,30 +2205,151 @@ class EconPaperApp:
         
         self._run_in_thread(do_both)
     
+    def _ai_expand_keywords(self):
+        """AI智能扩展关键词"""
+        query = self.search_query.get().strip()
+        if not query:
+            messagebox.showwarning("提示", "请先输入初始关键词")
+            return
+        
+        self.progress_indicators["search"].start("AI正在扩展关键词...")
+        
+        def do_expand():
+            try:
+                from openai import OpenAI
+                from config.settings import settings
+                
+                client = OpenAI(base_url=settings.llm_api_base, api_key=settings.llm_api_key)
+                
+                prompt = f"""作为学术研究助手，请帮我扩展以下研究主题的关键词，用于文献检索。
+
+研究主题：{query}
+
+请提供：
+1. 中文关键词扩展（5-8个相关术语，用逗号分隔）
+2. 英文关键词扩展（5-8个相关术语，用逗号分隔）
+3. 推荐的搜索组合（2-3种）
+
+要求：关键词要学术化、专业化，适合在学术数据库中检索。"""
+
+                response = client.chat.completions.create(
+                    model=settings.llm_model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.7
+                )
+                
+                result = response.choices[0].message.content
+                self._safe_update(lambda: messagebox.showinfo(
+                    "AI关键词扩展",
+                    f"原始关键词：{query}\n\n{result}"
+                ))
+                
+            except Exception as e:
+                self._safe_update(lambda: messagebox.showerror("失败", f"AI扩展失败: {e}"))
+            finally:
+                self._safe_update(lambda: self.progress_indicators["search"].stop())
+        
+        self._run_in_thread(do_expand)
+    
     def _run_search(self):
-        """运行学术搜索"""
+        """运行学术搜索 - 整合版：支持多数据源 + AI筛选"""
         query = self.search_query.get().strip()
         if not query:
             messagebox.showwarning("提示", "请输入搜索关键词")
             return
         
         source = self.search_source.get()
+        limit = int(self.search_limit.get()) if hasattr(self, 'search_limit') else 15
+        enable_ai = self.enable_ai_filter.get() if hasattr(self, 'enable_ai_filter') else False
         
         self.progress_indicators["search"].start(f"正在搜索 {source}...")
         self._set_result(self.search_result, "")
         
         def do_search():
             try:
-                if source == "Google Scholar":
-                    from knowledge.search.google_scholar import search_google_scholar, format_results
-                    results = search_google_scholar(query, limit=10)
-                    formatted = format_results(results)
-                else:
-                    from knowledge.search.cnki import search_cnki, format_results
-                    results = search_cnki(query, limit=10)
-                    formatted = format_results(results)
+                all_results = []
                 
+                # 获取期刊级别筛选设置
+                filter_cssci = self.filter_cssci.get() if hasattr(self, 'filter_cssci') else True
+                filter_ssci = self.filter_ssci.get() if hasattr(self, 'filter_ssci') else True
+                show_rank = self.show_rank_info.get() if hasattr(self, 'show_rank_info') else True
+                
+                # 根据选择的来源搜索
+                if source in ["全部", "Google Scholar"]:
+                    self._safe_update(lambda: self.progress_indicators["search"].update_text("正在搜索 Google Scholar..."))
+                    try:
+                        from knowledge.search.google_scholar import search_google_scholar
+                        gs_results = search_google_scholar(query, limit=limit * 2)  # 多抓取以供筛选
+                        
+                        gs_papers = []
+                        for r in gs_results:
+                            paper = {
+                                'title': r.title,
+                                'authors': r.authors,
+                                'year': r.year,
+                                'abstract': r.abstract,
+                                'url': r.link,
+                                'citations': r.citations,
+                                'journal': getattr(r, 'source', ''),
+                                'source': 'Google Scholar'
+                            }
+                            gs_papers.append(paper)
+                        
+                        # 期刊级别筛选
+                        if filter_ssci and gs_papers:
+                            self._safe_update(lambda: self.progress_indicators["search"].update_text("正在查询期刊级别..."))
+                            gs_papers = self._filter_by_journal_rank(gs_papers, "english", show_rank)
+                        
+                        all_results.extend(gs_papers)
+                        
+                    except Exception as e:
+                        print(f"Google Scholar 搜索失败: {e}")
+                
+                if source in ["全部", "知网 CNKI"]:
+                    self._safe_update(lambda: self.progress_indicators["search"].update_text("正在搜索知网..."))
+                    try:
+                        from knowledge.search.cnki import search_cnki
+                        cnki_results = search_cnki(query, limit=limit * 2)  # 多抓取以供筛选
+                        
+                        cnki_papers = []
+                        for r in cnki_results:
+                            paper = {
+                                'title': r.title,
+                                'authors': r.authors,
+                                'year': r.year,
+                                'abstract': r.abstract,
+                                'url': r.link,
+                                'citations': r.citations,
+                                'journal': r.source,
+                                'source': '知网 CNKI'
+                            }
+                            cnki_papers.append(paper)
+                        
+                        # 期刊级别筛选
+                        if filter_cssci and cnki_papers:
+                            self._safe_update(lambda: self.progress_indicators["search"].update_text("正在查询期刊级别..."))
+                            cnki_papers = self._filter_by_journal_rank(cnki_papers, "chinese", show_rank)
+                        
+                        all_results.extend(cnki_papers)
+                        
+                    except Exception as e:
+                        print(f"知网搜索失败: {e}")
+                
+                if not all_results:
+                    self._set_result(self.search_result, "未找到相关文献，请尝试其他关键词")
+                    return
+                
+                # AI智能筛选（如果启用）
+                if enable_ai and len(all_results) > limit:
+                    self._safe_update(lambda: self.progress_indicators["search"].update_text("AI正在筛选最相关文献..."))
+                    all_results = self._ai_filter_papers(query, all_results, limit)
+                
+                # 格式化输出
+                formatted = self._format_search_results(all_results, enable_ai)
                 self._set_result(self.search_result, formatted)
+                
+                # 保存搜索结果供其他功能使用
+                self.last_search_results = all_results
                 
             except Exception as e:
                 self._set_result(self.search_result, f"搜索失败: {e}")
@@ -1860,6 +2357,225 @@ class EconPaperApp:
                 self._safe_update(lambda: self.progress_indicators["search"].stop())
         
         self._run_in_thread(do_search)
+    
+    def _filter_by_journal_rank(self, papers: list, source_type: str, show_rank: bool) -> list:
+        """根据期刊级别过滤论文
+        
+        Args:
+            papers: 论文列表
+            source_type: "chinese" 或 "english"
+            show_rank: 是否显示期刊级别信息
+        
+        Returns:
+            过滤后的论文列表
+        """
+        try:
+            from knowledge.search.journal_rank import check_journal_rank, is_high_quality_journal, format_rank_info
+            
+            filtered = []
+            for paper in papers:
+                journal = paper.get("journal", "")
+                if not journal:
+                    # 如果没有期刊信息，暂时保留
+                    filtered.append(paper)
+                    continue
+                
+                rank = check_journal_rank(journal)
+                
+                if is_high_quality_journal(rank, source_type):
+                    if show_rank and rank:
+                        paper["rank_info"] = format_rank_info(rank)
+                    filtered.append(paper)
+            
+            # 如果所有论文都被过滤掉，返回前5条原始结果
+            return filtered if filtered else papers[:5]
+            
+        except Exception as e:
+            print(f"期刊级别查询失败: {e}")
+            return papers
+    
+    def _ai_filter_papers(self, query: str, papers: list, top_k: int) -> list:
+        """AI智能筛选文献"""
+        try:
+            from openai import OpenAI
+            from config.settings import settings
+            
+            client = OpenAI(base_url=settings.llm_api_base, api_key=settings.llm_api_key)
+            
+            # 构建文献摘要
+            papers_text = ""
+            for i, p in enumerate(papers[:30], 1):  # 最多30篇供筛选
+                title = p.get('title', '无标题')
+                abstract = p.get('abstract', p.get('snippet', '无摘要'))[:150]
+                papers_text += f"{i}. {title}\n   摘要：{abstract}\n\n"
+            
+            prompt = f"""作为学术研究助手，请从以下文献中筛选出与研究主题最相关的 {top_k} 篇。
+
+研究主题：{query}
+
+文献列表：
+{papers_text}
+
+请仅返回最相关的文献序号（用逗号分隔，如：1,5,8），从最相关到较相关排序。"""
+
+            response = client.chat.completions.create(
+                model=settings.llm_model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                max_tokens=100
+            )
+            
+            content = response.choices[0].message.content
+            if content is None:
+                return papers[:top_k]
+            selected = content.strip()
+            indices = [int(x.strip()) - 1 for x in selected.split(',') if x.strip().isdigit()]
+            
+            return [papers[i] for i in indices if 0 <= i < len(papers)]
+            
+        except Exception:
+            return papers[:top_k]
+    
+    def _format_search_results(self, results: list, ai_filtered: bool) -> str:
+        """格式化搜索结果"""
+        if not results:
+            return "未找到相关文献"
+        
+        output = []
+        output.append(f"{'='*60}")
+        output.append(f"📚 检索结果：共找到 {len(results)} 篇文献" + (" (AI智能筛选)" if ai_filtered else ""))
+        output.append(f"{'='*60}\n")
+        
+        for i, paper in enumerate(results, 1):
+            source = paper.get('source', '未知来源')
+            title = paper.get('title', '无标题')
+            authors = paper.get('authors', '未知作者')
+            year = paper.get('year', '未知年份')
+            journal = paper.get('journal', paper.get('venue', ''))
+            citations = paper.get('citations', 0)
+            abstract = paper.get('abstract', paper.get('snippet', '无摘要'))
+            url = paper.get('url', '')
+            
+            output.append(f"【{i}】{title}")
+            output.append(f"    来源: {source}")
+            output.append(f"    作者: {authors}")
+            output.append(f"    发表: {year}" + (f" | {journal}" if journal else ""))
+            
+            # 显示期刊级别
+            rank_info = paper.get("rank_info", "")
+            if rank_info:
+                output.append(f"    📊 级别: {rank_info}")
+            
+            if citations:
+                output.append(f"    引用: {citations}")
+            output.append(f"    摘要: {abstract[:250]}...")
+            if url:
+                output.append(f"    链接: {url}")
+            output.append("")
+        
+        output.append(f"\n{'='*60}")
+        output.append("💡 提示：点击「深度优化」→「引用文献」将搜索结果融入论文")
+        output.append("💡 提示：点击「退修助手」→「找支撑文献」获取审稿回应所需参考")
+        
+        return "\n".join(output)
+    
+    def _recommend_literature(self):
+        """根据论文内容智能推荐文献"""
+        content = self.diag_text.get("1.0", tk.END).strip()
+        if not content:
+            messagebox.showwarning("提示", "请先输入论文内容")
+            return
+        
+        self.progress_indicators["diagnose"].start("AI正在分析论文并推荐文献...")
+        
+        def do_recommend():
+            try:
+                from openai import OpenAI
+                from config.settings import settings
+                
+                client = OpenAI(base_url=settings.llm_api_base, api_key=settings.llm_api_key)
+                
+                # 提取关键词
+                prompt = f"""请分析以下论文内容，提取3-5个核心研究关键词用于文献检索：
+
+{content[:2000]}
+
+请以逗号分隔的形式返回关键词，例如：数字经济,企业创新,全要素生产率"""
+
+                response = client.chat.completions.create(
+                    model=settings.llm_model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.5,
+                    max_tokens=100
+                )
+                
+                keywords = response.choices[0].message.content
+                if keywords:
+                    keywords = keywords.strip()
+                    
+                    # 自动切换到搜索页面并执行搜索
+                    self._safe_update(lambda: self.search_query.delete(0, tk.END))
+                    self._safe_update(lambda: self.search_query.insert(0, keywords))
+                    self._safe_update(lambda: self._show_page("search"))
+                    self._safe_update(lambda: self.progress_indicators["diagnose"].stop())
+                    
+                    # 延迟执行搜索
+                    self.root.after(500, self._run_search)
+                    
+            except Exception as e:
+                self._safe_update(lambda: messagebox.showerror("失败", f"推荐失败: {e}"))
+                self._safe_update(lambda: self.progress_indicators["diagnose"].stop())
+        
+        self._run_in_thread(do_recommend)
+    
+    def _find_supporting_literature(self):
+        """根据审稿意见找支撑文献"""
+        comments = self.rev_comments.get("1.0", tk.END).strip()
+        if not comments:
+            messagebox.showwarning("提示", "请先输入审稿意见")
+            return
+        
+        self.progress_indicators["revision"].start("AI正在分析审稿意见...")
+        
+        def do_find():
+            try:
+                from openai import OpenAI
+                from config.settings import settings
+                
+                client = OpenAI(base_url=settings.llm_api_base, api_key=settings.llm_api_key)
+                
+                prompt = f"""请分析以下审稿意见，提取审稿人关注的核心问题，并生成3-5个用于查找支撑文献的关键词：
+
+审稿意见：
+{comments[:1500]}
+
+请以逗号分隔的形式返回搜索关键词，例如：内生性问题,工具变量,稳健性检验"""
+
+                response = client.chat.completions.create(
+                    model=settings.llm_model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.5,
+                    max_tokens=100
+                )
+                
+                keywords = response.choices[0].message.content
+                if keywords:
+                    keywords = keywords.strip()
+                    
+                    # 自动切换到搜索页面
+                    self._safe_update(lambda: self.search_query.delete(0, tk.END))
+                    self._safe_update(lambda: self.search_query.insert(0, keywords))
+                    self._safe_update(lambda: self._show_page("search"))
+                    self._safe_update(lambda: self.progress_indicators["revision"].stop())
+                    
+                    # 延迟执行搜索
+                    self.root.after(500, self._run_search)
+                    
+            except Exception as e:
+                self._safe_update(lambda: messagebox.showerror("失败", f"查找失败: {e}"))
+                self._safe_update(lambda: self.progress_indicators["revision"].stop())
+        
+        self._run_in_thread(do_find)
     
     def _run_revision(self):
         """运行退修处理"""
@@ -1911,17 +2627,47 @@ class EconPaperApp:
             self.setting_llm_key.insert(0, settings.llm_api_key or "")
             self.setting_llm_model.set(settings.llm_model or "gpt-4o-mini")
             
-            self.setting_embed_base.delete(0, tk.END)
-            self.setting_embed_base.insert(0, settings.embedding_api_base or "")
-            self.setting_embed_key.delete(0, tk.END)
-            self.setting_embed_key.insert(0, settings.embedding_api_key or "")
-            self.setting_embed_model.set(settings.embedding_model or "text-embedding-3-small")
+            # 安全访问嵌入模型配置控件
+            if hasattr(self, 'setting_embed_base') and hasattr(self.setting_embed_base, 'winfo_exists') and self.setting_embed_base.winfo_exists():
+                self.setting_embed_base.delete(0, tk.END)
+                self.setting_embed_base.insert(0, settings.embedding_api_base or "")
+            if hasattr(self, 'setting_embed_key') and hasattr(self.setting_embed_key, 'winfo_exists') and self.setting_embed_key.winfo_exists():
+                self.setting_embed_key.delete(0, tk.END)
+                self.setting_embed_key.insert(0, settings.embedding_api_key or "")
+            if hasattr(self, 'setting_embed_model'):
+                self.setting_embed_model.set(settings.embedding_model or "text-embedding-3-small")
             
             if settings.llm_api_key:
                 self.llm_status.config(text="● 已配置", fg=ModernStyle.SUCCESS)
         except Exception:
             pass
     
+    def _run_gs_auth(self):
+        """运行 Google Scholar 认证"""
+        from knowledge.search.google_scholar import authenticate_google_scholar
+        
+        def on_complete(success):
+            if success:
+                self._safe_update(lambda: messagebox.showinfo("成功", "Google Scholar 认证成功！后续搜索将使用该账号。"))
+            else:
+                self._safe_update(lambda: messagebox.showwarning("提示", "认证未完成或已取消。"))
+            self._safe_update(self._check_gs_auth_status)
+        
+        # 在新线程中运行认证，避免阻塞UI
+        self._run_in_thread(lambda: authenticate_google_scholar(callback=on_complete))
+
+    def _check_gs_auth_status(self):
+        """检查 Google Scholar 认证状态并更新 UI"""
+        try:
+            from knowledge.search.google_scholar import check_authentication_status
+            is_authed = check_authentication_status()
+            if is_authed:
+                self.gs_auth_btn.config(text="✅ 已认证", fg=ModernStyle.SUCCESS)
+            else:
+                self.gs_auth_btn.config(text="去认证", fg=ModernStyle.TEXT_PRIMARY)
+        except Exception:
+            pass
+
     def _save_settings(self):
         """保存设置"""
         try:
@@ -1931,18 +2677,19 @@ class EconPaperApp:
                 embed_base = self.setting_llm_base.get()
                 embed_key = self.setting_llm_key.get()
             else:
-                embed_base = self.setting_embed_base.get()
-                embed_key = self.setting_embed_key.get()
+                # 安全访问嵌入模型配置控件
+                embed_base = self.setting_embed_base.get() if (hasattr(self, 'setting_embed_base') and hasattr(self.setting_embed_base, 'winfo_exists') and self.setting_embed_base.winfo_exists()) else self.setting_llm_base.get()
+                embed_key = self.setting_embed_key.get() if (hasattr(self, 'setting_embed_key') and hasattr(self.setting_embed_key, 'winfo_exists') and self.setting_embed_key.winfo_exists()) else self.setting_llm_key.get()
             
             lines = [
                 f"# EconPaper Pro 配置",
                 f"",
-                f"# LLM 配置",
+                f"# 语言模型 (LLM) 配置",
                 f"LLM_API_BASE={self.setting_llm_base.get()}",
                 f"LLM_API_KEY={self.setting_llm_key.get()}",
                 f"LLM_MODEL={self.setting_llm_model.get()}",
                 f"",
-                f"# 嵌入模型配置",
+                f"# 嵌入模型 (Embedding) 配置",
                 f"EMBEDDING_API_BASE={embed_base}",
                 f"EMBEDDING_API_KEY={embed_key}",
                 f"EMBEDDING_MODEL={self.setting_embed_model.get()}",

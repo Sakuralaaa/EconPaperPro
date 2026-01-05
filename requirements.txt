@@ -1,5 +1,5 @@
 # EconPaper Pro 依赖
-# 原生 tkinter GUI 版本 - 无需浏览器
+# 原生 tkinter GUI 版本
 
 # 核心框架
 pydantic>=2.0.0
@@ -10,7 +10,7 @@ python-dotenv>=1.0.0
 openai>=1.30.0
 
 # 文档解析
-pypdf>=3.0.0
+PyMuPDF>=1.24.0
 python-docx>=0.8.11
 
 # 文本处理
@@ -19,3 +19,9 @@ jieba>=0.42.1
 # 工具库
 httpx>=0.25.0
 tenacity>=8.2.0
+
+# 网页抓取 (文献搜索)
+beautifulsoup4>=4.12.0
+playwright>=1.40.0
+# 备选方案 (如果 playwright 不可用)
+# selenium>=4.15.0

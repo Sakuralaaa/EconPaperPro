@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 知网(CNKI)搜索模块
-搜索中国知网文献
-
-注意：由于知网反爬严格，本模块提供模拟数据作为演示
-后续可根据需要扩展真实爬虫功能
+使用无头浏览器进行真实网页抓取
 """
 
-from typing import List, Dict, Optional
+from typing import List, Optional
 from dataclasses import dataclass
+import re
+import time
+import random
 
 
 @dataclass
@@ -20,7 +20,7 @@ class CNKIResult:
     abstract: str
     link: str
     citations: int
-    source: str  # 期刊/学位论文等
+    source: str  # 期刊名称
     database: str  # CNKI
 
 
@@ -31,8 +31,7 @@ def search_cnki(
 ) -> List[CNKIResult]:
     """
     搜索知网文献
-    
-    由于知网反爬严格，当前返回模拟数据
+    使用无头浏览器进行真实网页抓取
     
     Args:
         query: 搜索查询
@@ -42,106 +41,397 @@ def search_cnki(
     Returns:
         List[CNKIResult]: 搜索结果列表
     """
-    # 返回模拟数据
-    return _get_mock_results(query, limit, source_type)
+    # 优先尝试 Playwright
+    try:
+        return _search_via_playwright(query, limit, source_type)
+    except Exception as e:
+        print(f"CNKI Playwright 搜索失败: {e}")
+    
+    # 备用方案：Selenium
+    try:
+        return _search_via_selenium(query, limit, source_type)
+    except Exception as e:
+        print(f"CNKI Selenium 搜索失败: {e}")
+    
+    # 备用：使用百度学术
+    try:
+        return _search_via_baidu_xueshu(query, limit)
+    except Exception as e:
+        print(f"百度学术搜索失败: {e}")
+    
+    return []
 
 
-def _get_mock_results(
+def _search_via_playwright(
     query: str,
     limit: int,
     source_type: Optional[str]
 ) -> List[CNKIResult]:
     """
-    获取模拟搜索结果
-    
-    Args:
-        query: 搜索查询
-        limit: 返回数量
-        source_type: 来源类型
-        
-    Returns:
-        List[CNKIResult]: 模拟结果
+    使用 Playwright 无头浏览器搜索知网
     """
-    mock_data = [
-        CNKIResult(
-            title=f"数字经济发展与企业创新效率研究——基于{query}视角的分析",
-            authors="张三, 李四",
-            year="2023",
-            abstract=f"本文基于2010-2022年中国A股上市公司数据，采用双重差分方法研究了{query}对企业创新效率的影响。研究发现...",
-            link="https://www.cnki.net/",
-            citations=156,
-            source="经济研究",
-            database="CNKI"
-        ),
-        CNKIResult(
-            title=f"环境规制、绿色创新与高质量发展——{query}的经验证据",
-            authors="王五, 赵六",
-            year="2023",
-            abstract=f"本文利用省级面板数据，构建了{query}相关的理论分析框架，并运用工具变量方法进行了实证检验...",
-            link="https://www.cnki.net/",
-            citations=89,
-            source="管理世界",
-            database="CNKI"
-        ),
-        CNKIResult(
-            title=f"金融科技赋能实体经济：机制、路径与效果——基于{query}的研究",
-            authors="陈七, 周八",
-            year="2022",
-            abstract=f"金融科技的快速发展为实体经济转型升级提供了新动能。本文从{query}角度出发，分析了...",
-            link="https://www.cnki.net/",
-            citations=234,
-            source="金融研究",
-            database="CNKI"
-        ),
-        CNKIResult(
-            title=f"公司治理、信息披露与资本市场效率——来自{query}的证据",
-            authors="吴九, 郑十",
-            year="2022",
-            abstract=f"本文以2015-2021年沪深两市A股上市公司为样本，研究了{query}背景下公司治理对资本市场效率的影响...",
-            link="https://www.cnki.net/",
-            citations=78,
-            source="会计研究",
-            database="CNKI"
-        ),
-        CNKIResult(
-            title=f"产业政策与企业全要素生产率：{query}的准自然实验",
-            authors="钱一, 孙二",
-            year="2023",
-            abstract=f"本文将{query}作为准自然实验，运用双重差分模型识别了产业政策对企业全要素生产率的因果效应...",
-            link="https://www.cnki.net/",
-            citations=167,
-            source="中国工业经济",
-            database="CNKI"
-        ),
-    ]
+    from playwright.sync_api import sync_playwright
     
-    # 根据来源类型筛选
-    if source_type == "journal":
-        results = [r for r in mock_data if "研究" in r.source or "世界" in r.source]
-    elif source_type == "thesis":
-        results = []  # 模拟数据中没有学位论文
-    else:
-        results = mock_data
+    results = []
     
-    return results[:limit]
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
+        page = context.new_page()
+        
+        try:
+            # 访问知网学术搜索
+            url = f"https://kns.cnki.net/kns8s/search?q={query}"
+            page.goto(url, timeout=30000)
+            
+            # 等待搜索结果加载
+            page.wait_for_selector(".result-table-list", timeout=15000)
+            time.sleep(random.uniform(2, 3))
+            
+            # 解析搜索结果
+            items = page.query_selector_all(".result-table-list tbody tr")
+            
+            for item in items[:limit]:
+                try:
+                    # 标题
+                    title_elem = item.query_selector("td.name a.fz14")
+                    if title_elem:
+                        title = title_elem.inner_text().strip()
+                        link = title_elem.get_attribute("href") or ""
+                        if link and not link.startswith("http"):
+                            link = "https://kns.cnki.net" + link
+                    else:
+                        continue
+                    
+                    # 作者
+                    author_elem = item.query_selector("td.author")
+                    authors = author_elem.inner_text().strip() if author_elem else ""
+                    
+                    # 期刊来源
+                    source_elem = item.query_selector("td.source a")
+                    source = source_elem.inner_text().strip() if source_elem else ""
+                    
+                    # 发表时间
+                    date_elem = item.query_selector("td.date")
+                    date_text = date_elem.inner_text().strip() if date_elem else ""
+                    year = date_text[:4] if date_text else ""
+                    
+                    # 引用数（需要点击或另外获取）
+                    cite_elem = item.query_selector("td.quote")
+                    citations = 0
+                    if cite_elem:
+                        cite_text = cite_elem.inner_text().strip()
+                        if cite_text.isdigit():
+                            citations = int(cite_text)
+                    
+                    results.append(CNKIResult(
+                        title=title,
+                        authors=authors,
+                        year=year,
+                        abstract="",  # 需要点击进入详情页获取
+                        link=link,
+                        citations=citations,
+                        source=source,
+                        database="CNKI"
+                    ))
+                    
+                except Exception:
+                    continue
+                    
+        finally:
+            browser.close()
+    
+    return results
+
+
+def _search_via_selenium(
+    query: str,
+    limit: int,
+    source_type: Optional[str]
+) -> List[CNKIResult]:
+    """
+    使用 Selenium 无头浏览器搜索知网
+    """
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    
+    results = []
+    
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+    
+    driver = None
+    try:
+        driver = webdriver.Chrome(options=chrome_options)
+        
+        url = f"https://kns.cnki.net/kns8s/search?q={query}"
+        driver.get(url)
+        
+        wait = WebDriverWait(driver, 15)
+        wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".result-table-list")))
+        time.sleep(random.uniform(2, 3))
+        
+        items = driver.find_elements(By.CSS_SELECTOR, ".result-table-list tbody tr")
+        
+        for item in items[:limit]:
+            try:
+                title_elem = item.find_element(By.CSS_SELECTOR, "td.name a.fz14")
+                title = title_elem.text.strip()
+                link = title_elem.get_attribute("href") or ""
+                
+                try:
+                    author_elem = item.find_element(By.CSS_SELECTOR, "td.author")
+                    authors = author_elem.text.strip()
+                except Exception:
+                    authors = ""
+                
+                try:
+                    source_elem = item.find_element(By.CSS_SELECTOR, "td.source a")
+                    source = source_elem.text.strip()
+                except Exception:
+                    source = ""
+                
+                try:
+                    date_elem = item.find_element(By.CSS_SELECTOR, "td.date")
+                    date_text = date_elem.text.strip()
+                    year = date_text[:4] if date_text else ""
+                except Exception:
+                    year = ""
+                
+                citations = 0
+                try:
+                    cite_elem = item.find_element(By.CSS_SELECTOR, "td.quote")
+                    cite_text = cite_elem.text.strip()
+                    if cite_text.isdigit():
+                        citations = int(cite_text)
+                except Exception:
+                    pass
+                
+                results.append(CNKIResult(
+                    title=title,
+                    authors=authors,
+                    year=year,
+                    abstract="",
+                    link=link,
+                    citations=citations,
+                    source=source,
+                    database="CNKI"
+                ))
+                
+            except Exception:
+                continue
+                
+    finally:
+        if driver:
+            driver.quit()
+    
+    return results
+
+
+def _search_via_baidu_xueshu(query: str, limit: int) -> List[CNKIResult]:
+    """
+    使用百度学术作为备用搜索源
+    优先使用 Playwright，失败则回退到 httpx
+    """
+    # 尝试 Playwright
+    try:
+        return _search_baidu_playwright(query, limit)
+    except Exception as e:
+        print(f"百度学术 Playwright 失败: {e}")
+    
+    # 回退到 httpx
+    return _search_baidu_httpx(query, limit)
+
+
+def _search_baidu_playwright(query: str, limit: int) -> List[CNKIResult]:
+    """使用 Playwright 搜索百度学术"""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        raise ImportError("需要安装 playwright")
+    
+    results = []
+    
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+        )
+        page = context.new_page()
+        
+        try:
+            url = f"https://xueshu.baidu.com/s?wd={query}&ie=utf-8"
+            page.goto(url, timeout=30000)
+            
+            page.wait_for_selector(".result", timeout=10000)
+            time.sleep(random.uniform(1, 2))
+            
+            items = page.query_selector_all(".result")
+            
+            for item in items[:limit]:
+                try:
+                    # 标题
+                    title_elem = item.query_selector("h3 a")
+                    if title_elem:
+                        title = title_elem.inner_text().strip()
+                        link = title_elem.get_attribute("href") or ""
+                    else:
+                        continue
+                    
+                    # 作者
+                    author_elem = item.query_selector(".author_text")
+                    authors = author_elem.inner_text().strip() if author_elem else ""
+                    
+                    # 摘要
+                    abstract_elem = item.query_selector(".c_abstract")
+                    abstract = abstract_elem.inner_text().strip() if abstract_elem else ""
+                    
+                    # 来源和年份
+                    source = ""
+                    year = ""
+                    source_elem = item.query_selector(".sc_info")
+                    if source_elem:
+                        source_text = source_elem.inner_text()
+                        year_match = re.search(r'\b(19|20)\d{2}\b', source_text)
+                        if year_match:
+                            year = year_match.group()
+                        # 提取期刊名
+                        parts = source_text.split("-")
+                        if len(parts) > 1:
+                            source = parts[0].strip()
+                    
+                    # 引用数
+                    citations = 0
+                    cite_elem = item.query_selector(".sc_cite_cont")
+                    if cite_elem:
+                        cite_text = cite_elem.inner_text()
+                        cite_match = re.search(r'\d+', cite_text)
+                        if cite_match:
+                            citations = int(cite_match.group())
+                    
+                    results.append(CNKIResult(
+                        title=title,
+                        authors=authors,
+                        year=year,
+                        abstract=abstract,
+                        link=link,
+                        citations=citations,
+                        source=source or "百度学术",
+                        database="Baidu Scholar"
+                    ))
+                    
+                except Exception:
+                    continue
+                    
+        finally:
+            browser.close()
+    
+    return results
+
+
+def _search_baidu_httpx(query: str, limit: int) -> List[CNKIResult]:
+    """
+    使用 httpx 搜索百度学术（纯HTTP请求，无浏览器依赖）
+    """
+    import httpx
+    from bs4 import BeautifulSoup
+    
+    results = []
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+    }
+    
+    url = f"https://xueshu.baidu.com/s?wd={query}&ie=utf-8"
+    
+    try:
+        response = httpx.get(url, headers=headers, timeout=30, follow_redirects=True)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, "html.parser")
+        items = soup.select(".result")
+        
+        for item in items[:limit]:
+            try:
+                # 标题
+                title_elem = item.select_one("h3 a")
+                if title_elem:
+                    title = title_elem.get_text().strip()
+                    link = title_elem.get("href", "")
+                else:
+                    continue
+                
+                # 作者
+                author_elem = item.select_one(".author_text")
+                authors = author_elem.get_text().strip() if author_elem else ""
+                
+                # 摘要
+                abstract_elem = item.select_one(".c_abstract")
+                abstract = abstract_elem.get_text().strip() if abstract_elem else ""
+                
+                # 来源和年份
+                source = ""
+                year = ""
+                source_elem = item.select_one(".sc_info")
+                if source_elem:
+                    source_text = source_elem.get_text()
+                    year_match = re.search(r'\b(19|20)\d{2}\b', source_text)
+                    if year_match:
+                        year = year_match.group()
+                    parts = source_text.split("-")
+                    if len(parts) > 1:
+                        source = parts[0].strip()
+                
+                # 引用数
+                citations = 0
+                cite_elem = item.select_one(".sc_cite_cont")
+                if cite_elem:
+                    cite_text = cite_elem.get_text()
+                    cite_match = re.search(r'\d+', cite_text)
+                    if cite_match:
+                        citations = int(cite_match.group())
+                
+                results.append(CNKIResult(
+                    title=title,
+                    authors=authors,
+                    year=year,
+                    abstract=abstract,
+                    link=link,
+                    citations=citations,
+                    source=source or "百度学术",
+                    database="Baidu Scholar"
+                ))
+                
+            except Exception:
+                continue
+                
+    except Exception as e:
+        print(f"httpx 百度学术搜索失败: {e}")
+    
+    return results
 
 
 def format_results(results: List[CNKIResult]) -> str:
     """
     格式化搜索结果为 Markdown
-    
-    Args:
-        results: 搜索结果列表
-        
-    Returns:
-        str: Markdown 格式的文本
     """
     if not results:
         return "未找到相关文献"
     
     lines = []
-    lines.append(f"## 知网搜索结果 ({len(results)} 篇)\n")
-    lines.append("> 注意：当前显示的是模拟数据，实际使用需配置知网访问权限\n")
+    lines.append(f"## 中文文献搜索结果 ({len(results)} 篇)\n")
     
     for i, r in enumerate(results, 1):
         lines.append(f"### {i}. {r.title}")
@@ -152,6 +442,9 @@ def format_results(results: List[CNKIResult]) -> str:
             abstract_preview = r.abstract[:200] + "..." if len(r.abstract) > 200 else r.abstract
             lines.append(f"\n{abstract_preview}")
         
+        if r.link:
+            lines.append(f"\n[查看原文]({r.link})")
+        
         lines.append("")
         lines.append("---")
         lines.append("")
@@ -159,15 +452,8 @@ def format_results(results: List[CNKIResult]) -> str:
     return "\n".join(lines)
 
 
-def get_article_detail(article_id: str) -> Optional[Dict]:
+def get_article_detail(article_id: str) -> Optional[dict]:
     """
     获取文章详情（预留接口）
-    
-    Args:
-        article_id: 文章ID
-        
-    Returns:
-        Optional[Dict]: 文章详情
     """
-    # 预留接口，待后续实现
     return None
