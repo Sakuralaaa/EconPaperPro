@@ -5,7 +5,14 @@ PDF解析模块
 """
 
 from typing import Optional, Dict, List
-import fitz  # PyMuPDF
+
+# 安全导入 PyMuPDF
+try:
+    import fitz  # PyMuPDF
+    FITZ_AVAILABLE = True
+except ImportError:
+    fitz = None
+    FITZ_AVAILABLE = False
 
 
 class PDFParser:
@@ -27,6 +34,9 @@ class PDFParser:
         Returns:
             str: 提取的文本内容
         """
+        if not FITZ_AVAILABLE or fitz is None:
+            raise RuntimeError("PDF 解析需要安装 PyMuPDF: pip install PyMuPDF")
+        
         try:
             doc = fitz.open(file_path)
             text_parts = []
@@ -51,6 +61,9 @@ class PDFParser:
         Returns:
             List[str]: 每页的文本内容列表
         """
+        if not FITZ_AVAILABLE or fitz is None:
+            raise RuntimeError("PDF 解析需要安装 PyMuPDF: pip install PyMuPDF")
+        
         try:
             doc = fitz.open(file_path)
             pages = []
@@ -75,6 +88,9 @@ class PDFParser:
         Returns:
             Dict: 包含文本和元数据的字典
         """
+        if not FITZ_AVAILABLE or fitz is None:
+            raise RuntimeError("PDF 解析需要安装 PyMuPDF: pip install PyMuPDF")
+        
         try:
             doc = fitz.open(file_path)
             
@@ -112,6 +128,9 @@ class PDFParser:
         Returns:
             str: 提取的文本内容
         """
+        if not FITZ_AVAILABLE or fitz is None:
+            raise RuntimeError("PDF 解析需要安装 PyMuPDF: pip install PyMuPDF")
+        
         try:
             doc = fitz.open(stream=file_bytes, filetype="pdf")
             text_parts = []

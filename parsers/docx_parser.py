@@ -5,7 +5,14 @@ Word文档解析模块
 """
 
 from typing import Dict, List
-from docx import Document
+
+# 安全导入 python-docx
+try:
+    from docx import Document
+    DOCX_AVAILABLE = True
+except ImportError:
+    Document = None
+    DOCX_AVAILABLE = False
 
 
 class DocxParser:
@@ -27,6 +34,9 @@ class DocxParser:
         Returns:
             str: 提取的文本内容
         """
+        if not DOCX_AVAILABLE or Document is None:
+            raise RuntimeError("Word 解析需要安装 python-docx: pip install python-docx")
+        
         try:
             doc = Document(file_path)
             paragraphs = [para.text for para in doc.paragraphs]
@@ -45,6 +55,9 @@ class DocxParser:
         Returns:
             Dict: 包含段落和结构信息的字典
         """
+        if not DOCX_AVAILABLE or Document is None:
+            raise RuntimeError("Word 解析需要安装 python-docx: pip install python-docx")
+        
         try:
             doc = Document(file_path)
             
@@ -85,6 +98,9 @@ class DocxParser:
         Returns:
             List[Dict]: 标题列表
         """
+        if not DOCX_AVAILABLE or Document is None:
+            raise RuntimeError("Word 解析需要安装 python-docx: pip install python-docx")
+        
         try:
             doc = Document(file_path)
             
@@ -114,6 +130,9 @@ class DocxParser:
         Returns:
             str: 提取的文本内容
         """
+        if not DOCX_AVAILABLE or Document is None:
+            raise RuntimeError("Word 解析需要安装 python-docx: pip install python-docx")
+        
         try:
             from io import BytesIO
             doc = Document(BytesIO(file_bytes))

@@ -7,8 +7,18 @@
 import sys
 import os
 from pathlib import Path
-from loguru import logger
 from typing import Optional
+
+# 安全导入 loguru
+try:
+    from loguru import logger
+    LOGURU_AVAILABLE = True
+except ImportError:
+    LOGURU_AVAILABLE = False
+    logger = None
+
+# 日志系统初始化标志
+_logger_initialized = False
 
 
 def setup_logger(
@@ -28,80 +38,131 @@ def setup_logger(
         retention: 日志保留时间
         console_output: 是否输出到控制台
     """
-    # 移除默认的 handler
-    logger.remove()
+    global _logger_initialized
     
-    # 确定日志目录
-    log_path: Path
-    if log_dir is None:
-        # 默认在项目根目录下创建 logs 文件夹
-        project_root = Path(__file__).parent.parent
-        log_path = project_root / "logs"
-    else:
-        log_path = Path(log_dir)
+    if not LOGURU_AVAILABLE or logger is None:
+        _logger_initialized = False
+        return
     
-    # 创建日志目录
-    log_path.mkdir(parents=True, exist_ok=True)
-    
-    # 日志格式
-    log_format = (
-        "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
-        "<level>{level: <8}</level> | "
-        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
-        "<level>{message}</level>"
-    )
-    
-    # 简化的控制台格式
-    console_format = (
-        "<green>{time:HH:mm:ss}</green> | "
-        "<level>{level: <8}</level> | "
-        "<level>{message}</level>"
-    )
-    
-    # 控制台输出
-    if console_output:
-        logger.add(
-            sys.stderr,
-            format=console_format,
-            level=log_level,
-            colorize=True
+    try:
+        # 移除默认的 handler
+        logger.remove()
+        
+        # 确定日志目录
+        log_path: Path
+        if log_dir is None:
+            # 尝试使用多个可能的路径
+            try:
+                # 首选：从配置获取
+                from config.settings import settings
+                if hasattr(settings, 'data_dir') and settings.data_dir:
+                    log_path = Path(settings.data_dir) / "logs"
+                else:
+                    # 备选：项目根目录
+                    project_root = Path(__file__).parent.parent
+                    log_path = project_root / "logs"
+            except Exception:
+                # 最终备选：用户目录
+                log_path = Path.home() / ".econpaper" / "logs"
+        else:
+            log_path = Path(log_dir)
+        
+        # 创建日志目录
+        try:
+            log_path.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            # 如果无法创建目录，只使用控制台输出
+            log_path = None
+        
+        # 日志格式
+        log_format = (
+            "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+            "<level>{level: <8}</level> | "
+            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+            "<level>{message}</level>"
         )
+        
+        # 简化的控制台格式
+        console_format = (
+            "<green>{time:HH:mm:ss}</green> | "
+            "<level>{level: <8}</level> | "
+            "<level>{message}</level>"
+        )
+        
+        # 控制台输出
+        if console_output:
+            logger.add(
+                sys.stderr,
+                format=console_format,
+                level=log_level,
+                colorize=True
+            )
+        
+        # 只有在成功创建日志目录时才添加文件处理器
+        if log_path is not None:
+            # 主日志文件 - 所有级别
+            logger.add(
+                log_path / "app.log",
+                format=log_format,
+                level="DEBUG",
+                rotation=rotation,
+                retention=retention,
+                encoding="utf-8",
+                enqueue=True  # 异步写入，提高性能
+            )
+            
+            # 错误日志文件 - 仅错误和严重级别
+            logger.add(
+                log_path / "error.log",
+                format=log_format,
+                level="ERROR",
+                rotation=rotation,
+                retention=retention,
+                encoding="utf-8",
+                enqueue=True
+            )
+            
+            # API调用日志 - 专门记录 LLM API 调用
+            logger.add(
+                log_path / "api.log",
+                format=log_format,
+                level="DEBUG",
+                rotation=rotation,
+                retention=retention,
+                encoding="utf-8",
+                enqueue=True,
+                filter=lambda record: "api" in record["extra"]
+            )
+        
+        _logger_initialized = True
+        logger.info("日志系统初始化完成")
+        
+    except Exception as e:
+        # 日志系统初始化失败，静默处理
+        _logger_initialized = False
+        print(f"[警告] 日志系统初始化失败: {e}")
+
+
+class DummyLogger:
+    """占位日志器，当 loguru 不可用时使用"""
     
-    # 主日志文件 - 所有级别
-    logger.add(
-        log_path / "app.log",
-        format=log_format,
-        level="DEBUG",
-        rotation=rotation,
-        retention=retention,
-        encoding="utf-8",
-        enqueue=True  # 异步写入，提高性能
-    )
+    def debug(self, msg, *args, **kwargs):
+        pass
     
-    # 错误日志文件 - 仅错误和严重级别
-    logger.add(
-        log_path / "error.log",
-        format=log_format,
-        level="ERROR",
-        rotation=rotation,
-        retention=retention,
-        encoding="utf-8",
-        enqueue=True
-    )
+    def info(self, msg, *args, **kwargs):
+        pass
     
-    # API调用日志 - 专门记录 LLM API 调用
-    logger.add(
-        log_path / "api.log",
-        format=log_format,
-        level="DEBUG",
-        rotation=rotation,
-        retention=retention,
-        encoding="utf-8",
-        enqueue=True,
-        filter=lambda record: "api" in record["extra"]
-    )
+    def warning(self, msg, *args, **kwargs):
+        print(f"[WARN] {msg}")
     
-    logger.info("日志系统初始化完成")
+    def error(self, msg, *args, **kwargs):
+        print(f"[ERROR] {msg}")
+    
+    def bind(self, **kwargs):
+        return self
+
+
+_dummy_logger = DummyLogger()
 
 
 def get_logger(name: str = "econpaper"):
@@ -114,7 +175,13 @@ def get_logger(name: str = "econpaper"):
     Returns:
         logger: 配置好的 logger 实例
     """
-    return logger.bind(module=name)
+    if not LOGURU_AVAILABLE or logger is None:
+        return _dummy_logger
+    
+    try:
+        return logger.bind(module=name)
+    except Exception:
+        return _dummy_logger
 
 
 def log_api_call(
@@ -197,4 +264,7 @@ def log_performance(
 # 在模块加载时自动初始化日志系统
 # 可以通过环境变量控制
 if os.environ.get("ECONPAPER_INIT_LOGGER", "1") == "1":
-    setup_logger()
+    try:
+        setup_logger()
+    except Exception as e:
+        print(f"[警告] 日志初始化异常: {e}")
