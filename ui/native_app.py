@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-EconPaper Pro - 原生 Tkinter GUI 应用 (v2.2优化版)
+EconPaper Pro - 原生 Tkinter GUI 应用 (v2.3用户体验优化版)
 - 修复UI卡顿问题
 - 现代化界面设计
 - 添加进度指示器
 - 优化字体大小
 - 分离API配置
 - 模型拉取功能
+- 首次使用引导
+- 实时字数统计
+- 关于页面
 """
+
+VERSION = "0.4.2"
 
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
@@ -251,7 +256,7 @@ class ModernButton(tk.Canvas):
 
 
 class EconPaperApp:
-    """EconPaper Pro 主应用 - v2.2优化版"""
+    """EconPaper Pro 主应用 - v2.3用户体验优化版"""
     
     def __init__(self, root: tk.Tk):
         self.root = root
@@ -278,12 +283,16 @@ class EconPaperApp:
         self.current_tab = tk.StringVar(value="diagnose")
         self.is_processing = False
         self.last_search_results = []  # 存储最近的搜索结果
+        self.api_configured = False  # API是否已配置
         
         # 创建主布局
         self._create_layout()
         
         # 启动UI更新循环
         self._process_queue()
+        
+        # 首次使用检查
+        self.root.after(500, self._check_first_run)
         
     def _process_queue(self):
         """处理队列中的UI更新任务"""
@@ -436,15 +445,16 @@ class EconPaperApp:
                 widget.bind("<Enter>", lambda e, p=page_id: self._on_nav_hover(p, True))
                 widget.bind("<Leave>", lambda e, p=page_id: self._on_nav_hover(p, False))
         
-        # 底部设置按钮
-        settings_frame = tk.Frame(sidebar, bg=ModernStyle.BG_SIDEBAR)
-        settings_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=12, pady=20)
+        # 底部按钮区
+        bottom_frame = tk.Frame(sidebar, bg=ModernStyle.BG_SIDEBAR)
+        bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=12, pady=20)
         
-        sep2 = tk.Frame(settings_frame, bg=ModernStyle.BORDER, height=1)
+        sep2 = tk.Frame(bottom_frame, bg=ModernStyle.BORDER, height=1)
         sep2.pack(fill=tk.X, pady=(0, 15))
         
-        settings_btn = tk.Frame(settings_frame, bg=ModernStyle.BG_SIDEBAR, cursor="hand2")
-        settings_btn.pack(fill=tk.X)
+        # 设置按钮
+        settings_btn = tk.Frame(bottom_frame, bg=ModernStyle.BG_SIDEBAR, cursor="hand2")
+        settings_btn.pack(fill=tk.X, pady=3)
         
         settings_inner = tk.Frame(settings_btn, bg=ModernStyle.BG_SIDEBAR, padx=15, pady=12)
         settings_inner.pack(fill=tk.X)
@@ -482,6 +492,40 @@ class EconPaperApp:
         settings_inner.bind("<Button-1>", on_settings_click)
         settings_icon.bind("<Button-1>", on_settings_click)
         settings_text.bind("<Button-1>", on_settings_click)
+        
+        # 关于按钮
+        about_btn = tk.Frame(bottom_frame, bg=ModernStyle.BG_SIDEBAR, cursor="hand2")
+        about_btn.pack(fill=tk.X, pady=3)
+        
+        about_inner = tk.Frame(about_btn, bg=ModernStyle.BG_SIDEBAR, padx=15, pady=10)
+        about_inner.pack(fill=tk.X)
+        
+        about_icon = tk.Label(
+            about_inner,
+            text="ℹ️",
+            font=(ModernStyle.FONT_FAMILY, 14),
+            bg=ModernStyle.BG_SIDEBAR,
+            cursor="hand2"
+        )
+        about_icon.pack(side=tk.LEFT)
+        
+        about_text = tk.Label(
+            about_inner,
+            text=f"关于 v{VERSION}",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_SIDEBAR,
+            fg=ModernStyle.TEXT_MUTED,
+            cursor="hand2"
+        )
+        about_text.pack(side=tk.LEFT, padx=12)
+        
+        def on_about_click(e):
+            self._show_about_dialog()
+        
+        about_btn.bind("<Button-1>", on_about_click)
+        about_inner.bind("<Button-1>", on_about_click)
+        about_icon.bind("<Button-1>", on_about_click)
+        about_text.bind("<Button-1>", on_about_click)
 
     def _on_nav_hover(self, page_id, is_enter):
         """导航悬停效果"""
@@ -552,9 +596,12 @@ class EconPaperApp:
         
         return header
     
-    def _create_text_input(self, parent, height=15):
-        """创建优化的文本输入框"""
-        container = tk.Frame(parent, bg=ModernStyle.BORDER, padx=1, pady=1)
+    def _create_text_input(self, parent, height=15, show_count=True):
+        """创建优化的文本输入框（带字数统计）"""
+        outer_container = tk.Frame(parent, bg=ModernStyle.BG_MAIN)
+        
+        container = tk.Frame(outer_container, bg=ModernStyle.BORDER, padx=1, pady=1)
+        container.pack(fill=tk.BOTH, expand=True)
         
         text = scrolledtext.ScrolledText(
             container,
@@ -572,7 +619,29 @@ class EconPaperApp:
         )
         text.pack(fill=tk.BOTH, expand=True)
         
-        return container, text
+        # 字数统计标签
+        if show_count:
+            count_label = tk.Label(
+                outer_container,
+                text="字数: 0",
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+                bg=ModernStyle.BG_MAIN,
+                fg=ModernStyle.TEXT_MUTED,
+                anchor="e"
+            )
+            count_label.pack(fill=tk.X, pady=(3, 0))
+            
+            # 绑定文本变化事件
+            def update_count(event=None):
+                content = text.get("1.0", tk.END).strip()
+                char_count = len(content)
+                word_count = len(content.split()) if content else 0
+                count_label.config(text=f"字数: {char_count} | 词数: {word_count}")
+            
+            text.bind("<KeyRelease>", update_count)
+            text.bind("<<Paste>>", lambda e: text.after(10, update_count))
+        
+        return outer_container, text
     
     def _create_text_output(self, parent, height=15):
         """创建优化的文本输出框"""
@@ -1621,7 +1690,137 @@ class EconPaperApp:
         # 初始状态：隐藏独立配置
         self._toggle_embed_api()
         
-        # ============ 3. 保存按钮 ============
+        # ============ 3. 数据存储配置 ============
+        section3 = tk.Frame(content, bg=ModernStyle.BG_MAIN)
+        section3.pack(fill=tk.X, pady=(0, 30))
+        
+        header3 = tk.Frame(section3, bg=ModernStyle.BG_MAIN)
+        header3.pack(fill=tk.X, pady=(0, 15))
+        
+        tk.Label(
+            header3,
+            text="📁 数据存储配置",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_LG, "bold"),
+            bg=ModernStyle.BG_MAIN,
+            fg=ModernStyle.TEXT_PRIMARY
+        ).pack(side=tk.LEFT)
+        
+        tk.Label(
+            header3,
+            text="💡 自定义存储位置可避免占用C盘空间",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+            bg=ModernStyle.BG_MAIN,
+            fg=ModernStyle.TEXT_MUTED
+        ).pack(side=tk.RIGHT)
+        
+        storage_frame = tk.Frame(section3, bg=ModernStyle.BG_SECONDARY, padx=25, pady=25)
+        storage_frame.pack(fill=tk.X)
+        
+        # 数据目录
+        row_s1 = tk.Frame(storage_frame, bg=ModernStyle.BG_SECONDARY)
+        row_s1.pack(fill=tk.X, pady=10)
+        
+        tk.Label(
+            row_s1,
+            text="数据目录:",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_PRIMARY,
+            width=12,
+            anchor="w"
+        ).pack(side=tk.LEFT)
+        
+        self.setting_data_dir = tk.Entry(
+            row_s1,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_MAIN,
+            relief="flat",
+            width=45
+        )
+        self.setting_data_dir.pack(side=tk.LEFT, padx=12, ipady=8)
+        
+        tk.Button(
+            row_s1,
+            text="📂 浏览",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_MAIN,
+            bd=0,
+            padx=15,
+            pady=6,
+            cursor="hand2",
+            command=lambda: self._browse_directory("data_dir")
+        ).pack(side=tk.LEFT, padx=8)
+        
+        tk.Label(
+            row_s1,
+            text="(日志、缓存、向量库)",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_MUTED
+        ).pack(side=tk.LEFT, padx=8)
+        
+        # 工作区目录
+        row_s2 = tk.Frame(storage_frame, bg=ModernStyle.BG_SECONDARY)
+        row_s2.pack(fill=tk.X, pady=10)
+        
+        tk.Label(
+            row_s2,
+            text="工作区目录:",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_PRIMARY,
+            width=12,
+            anchor="w"
+        ).pack(side=tk.LEFT)
+        
+        self.setting_workspace_dir = tk.Entry(
+            row_s2,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_MAIN,
+            relief="flat",
+            width=45
+        )
+        self.setting_workspace_dir.pack(side=tk.LEFT, padx=12, ipady=8)
+        
+        tk.Button(
+            row_s2,
+            text="📂 浏览",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_MAIN,
+            bd=0,
+            padx=15,
+            pady=6,
+            cursor="hand2",
+            command=lambda: self._browse_directory("workspace_dir")
+        ).pack(side=tk.LEFT, padx=8)
+        
+        tk.Label(
+            row_s2,
+            text="(导出文件存放位置)",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_MUTED
+        ).pack(side=tk.LEFT, padx=8)
+        
+        # 当前存储位置显示
+        row_s3 = tk.Frame(storage_frame, bg=ModernStyle.BG_SECONDARY)
+        row_s3.pack(fill=tk.X, pady=(15, 5))
+        
+        self.storage_info_label = tk.Label(
+            row_s3,
+            text="",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+            bg=ModernStyle.BG_SECONDARY,
+            fg=ModernStyle.TEXT_MUTED,
+            wraplength=600,
+            justify="left"
+        )
+        self.storage_info_label.pack(anchor="w")
+        
+        # 加载并显示当前存储位置
+        self._update_storage_info()
+        
+        # ============ 4. 保存按钮 ============
         btn_frame = tk.Frame(content, bg=ModernStyle.BG_MAIN)
         btn_frame.pack(fill=tk.X, pady=30)
         
@@ -1861,6 +2060,32 @@ class EconPaperApp:
         
         self._run_in_thread(do_test)
     
+    def _browse_directory(self, target: str):
+        """浏览选择目录"""
+        directory = filedialog.askdirectory(title="选择目录")
+        if directory:
+            if target == "data_dir":
+                self.setting_data_dir.delete(0, tk.END)
+                self.setting_data_dir.insert(0, directory)
+            elif target == "workspace_dir":
+                self.setting_workspace_dir.delete(0, tk.END)
+                self.setting_workspace_dir.insert(0, directory)
+    
+    def _update_storage_info(self):
+        """更新存储位置信息显示"""
+        try:
+            from config.settings import settings
+            info_text = f"📍 当前数据目录: {settings.data_dir}\n📍 当前工作区: {settings.workspace_dir}"
+            self.storage_info_label.config(text=info_text)
+            
+            # 填充输入框
+            self.setting_data_dir.delete(0, tk.END)
+            self.setting_data_dir.insert(0, settings.data_dir)
+            self.setting_workspace_dir.delete(0, tk.END)
+            self.setting_workspace_dir.insert(0, settings.workspace_dir)
+        except Exception:
+            pass
+    
     def _reset_settings(self):
         """重置设置"""
         if messagebox.askyesno("确认", "确定要重置所有设置吗？"):
@@ -1874,8 +2099,247 @@ class EconPaperApp:
                 self.setting_embed_key.delete(0, tk.END)
             if hasattr(self, 'setting_embed_model'):
                 self.setting_embed_model.set("")
+            # 重置存储目录
+            if hasattr(self, 'setting_data_dir'):
+                self.setting_data_dir.delete(0, tk.END)
+            if hasattr(self, 'setting_workspace_dir'):
+                self.setting_workspace_dir.delete(0, tk.END)
             self.llm_provider_var.set("OpenAI 兼容")
             self.llm_status.config(text="● 未配置", fg=ModernStyle.WARNING)
+    
+    def _check_first_run(self):
+        """首次运行检查 - 引导用户配置API"""
+        try:
+            from config.settings import settings
+            if not settings.llm_api_key or not settings.llm_api_base:
+                self.api_configured = False
+                self._show_first_run_guide()
+            else:
+                self.api_configured = True
+        except Exception:
+            self.api_configured = False
+            self._show_first_run_guide()
+    
+    def _show_first_run_guide(self):
+        """显示首次使用引导"""
+        guide_window = tk.Toplevel(self.root)
+        guide_window.title("🎉 欢迎使用 EconPaper Pro")
+        guide_window.geometry("550x450")
+        guide_window.resizable(False, False)
+        guide_window.configure(bg=ModernStyle.BG_MAIN)
+        guide_window.transient(self.root)
+        guide_window.grab_set()
+        
+        # 居中显示
+        guide_window.update_idletasks()
+        x = (guide_window.winfo_screenwidth() - 550) // 2
+        y = (guide_window.winfo_screenheight() - 450) // 2
+        guide_window.geometry(f"+{x}+{y}")
+        
+        # 内容
+        content = tk.Frame(guide_window, bg=ModernStyle.BG_MAIN, padx=40, pady=30)
+        content.pack(fill=tk.BOTH, expand=True)
+        
+        tk.Label(
+            content,
+            text="🎉 欢迎使用 EconPaper Pro!",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XL, "bold"),
+            bg=ModernStyle.BG_MAIN,
+            fg=ModernStyle.TEXT_PRIMARY
+        ).pack(pady=(0, 20))
+        
+        tk.Label(
+            content,
+            text="检测到您还未配置 AI 模型，请先完成以下设置：",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_MAIN,
+            fg=ModernStyle.TEXT_SECONDARY
+        ).pack(pady=(0, 25))
+        
+        # 步骤说明
+        steps = [
+            ("1️⃣", "准备 API 密钥", "从 OpenAI、DeepSeek 或硅基流动等平台获取"),
+            ("2️⃣", "进入设置页面", "点击左侧「系统设置」"),
+            ("3️⃣", "填写配置", "选择供应商 → 填写 API 密钥 → 保存"),
+            ("4️⃣", "开始使用", "配置完成后即可使用所有功能"),
+        ]
+        
+        for icon, title, desc in steps:
+            step_frame = tk.Frame(content, bg=ModernStyle.BG_SECONDARY, padx=15, pady=12)
+            step_frame.pack(fill=tk.X, pady=5)
+            
+            tk.Label(
+                step_frame,
+                text=icon,
+                font=(ModernStyle.FONT_FAMILY, 16),
+                bg=ModernStyle.BG_SECONDARY
+            ).pack(side=tk.LEFT, padx=(0, 12))
+            
+            text_frame = tk.Frame(step_frame, bg=ModernStyle.BG_SECONDARY)
+            text_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+            
+            tk.Label(
+                text_frame,
+                text=title,
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD, "bold"),
+                bg=ModernStyle.BG_SECONDARY,
+                fg=ModernStyle.TEXT_PRIMARY,
+                anchor="w"
+            ).pack(anchor="w")
+            
+            tk.Label(
+                text_frame,
+                text=desc,
+                font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XS),
+                bg=ModernStyle.BG_SECONDARY,
+                fg=ModernStyle.TEXT_MUTED,
+                anchor="w"
+            ).pack(anchor="w")
+        
+        # 按钮
+        btn_frame = tk.Frame(content, bg=ModernStyle.BG_MAIN)
+        btn_frame.pack(fill=tk.X, pady=(25, 0))
+        
+        def go_to_settings():
+            guide_window.destroy()
+            self._show_page("settings")
+        
+        ModernButton(
+            btn_frame,
+            text="前往设置",
+            command=go_to_settings,
+            width=150,
+            height=45
+        ).pack(side=tk.LEFT)
+        
+        tk.Button(
+            btn_frame,
+            text="稍后配置",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_SECONDARY,
+            bd=0,
+            padx=25,
+            pady=12,
+            cursor="hand2",
+            command=guide_window.destroy
+        ).pack(side=tk.LEFT, padx=15)
+    
+    def _show_about_dialog(self):
+        """显示关于对话框"""
+        about_window = tk.Toplevel(self.root)
+        about_window.title("关于 EconPaper Pro")
+        about_window.geometry("450x380")
+        about_window.resizable(False, False)
+        about_window.configure(bg=ModernStyle.BG_MAIN)
+        about_window.transient(self.root)
+        about_window.grab_set()
+        
+        # 居中显示
+        about_window.update_idletasks()
+        x = (about_window.winfo_screenwidth() - 450) // 2
+        y = (about_window.winfo_screenheight() - 380) // 2
+        about_window.geometry(f"+{x}+{y}")
+        
+        content = tk.Frame(about_window, bg=ModernStyle.BG_MAIN, padx=40, pady=30)
+        content.pack(fill=tk.BOTH, expand=True)
+        
+        # Logo
+        tk.Label(
+            content,
+            text="📚",
+            font=(ModernStyle.FONT_FAMILY, 48),
+            bg=ModernStyle.BG_MAIN
+        ).pack()
+        
+        tk.Label(
+            content,
+            text="EconPaper Pro",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_XL, "bold"),
+            bg=ModernStyle.BG_MAIN,
+            fg=ModernStyle.TEXT_PRIMARY
+        ).pack(pady=(10, 5))
+        
+        tk.Label(
+            content,
+            text=f"版本 {VERSION}",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_MAIN,
+            fg=ModernStyle.TEXT_SECONDARY
+        ).pack()
+        
+        tk.Label(
+            content,
+            text="经管学术论文智能助手",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_MAIN,
+            fg=ModernStyle.TEXT_MUTED
+        ).pack(pady=(15, 20))
+        
+        # 功能列表
+        features = "✅ 论文诊断  ✅ 深度优化  ✅ 降重降AI\n✅ 学术搜索  ✅ 退修助手  ✅ 期刊过滤"
+        tk.Label(
+            content,
+            text=features,
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_MAIN,
+            fg=ModernStyle.TEXT_PRIMARY,
+            justify="center"
+        ).pack(pady=(0, 20))
+        
+        # 链接
+        link_frame = tk.Frame(content, bg=ModernStyle.BG_MAIN)
+        link_frame.pack()
+        
+        tk.Label(
+            link_frame,
+            text="📖 使用帮助",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_MAIN,
+            fg=ModernStyle.PRIMARY,
+            cursor="hand2"
+        ).pack(side=tk.LEFT, padx=15)
+        
+        tk.Label(
+            link_frame,
+            text="🐛 反馈问题",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_SM),
+            bg=ModernStyle.BG_MAIN,
+            fg=ModernStyle.PRIMARY,
+            cursor="hand2"
+        ).pack(side=tk.LEFT, padx=15)
+        
+        # 关闭按钮
+        tk.Button(
+            content,
+            text="关闭",
+            font=(ModernStyle.FONT_FAMILY, ModernStyle.FONT_SIZE_MD),
+            bg=ModernStyle.BG_SECONDARY,
+            bd=0,
+            padx=30,
+            pady=10,
+            cursor="hand2",
+            command=about_window.destroy
+        ).pack(pady=(20, 0))
+    
+    def _check_api_before_action(self, action_name: str) -> bool:
+        """执行操作前检查 API 配置"""
+        if not self.api_configured:
+            try:
+                from config.settings import settings
+                if settings.llm_api_key and settings.llm_api_base:
+                    self.api_configured = True
+                    return True
+            except Exception:
+                pass
+            
+            result = messagebox.askyesno(
+                "需要配置 API",
+                f"使用「{action_name}」功能需要先配置 AI 模型。\n\n是否现在前往设置？"
+            )
+            if result:
+                self._show_page("settings")
+            return False
+        return True
     
     # ==================== 核心功能方法 ====================
     
@@ -1957,6 +2421,9 @@ class EconPaperApp:
     
     def _run_diagnose(self):
         """运行诊断"""
+        if not self._check_api_before_action("论文诊断"):
+            return
+        
         content = None
         file_type = None
         
@@ -2012,6 +2479,9 @@ class EconPaperApp:
     
     def _run_optimize(self):
         """运行优化"""
+        if not self._check_api_before_action("深度优化"):
+            return
+        
         content = None
         file_type = None
         
@@ -2083,6 +2553,9 @@ class EconPaperApp:
     
     def _run_dedup(self):
         """运行降重"""
+        if not self._check_api_before_action("智能降重"):
+            return
+        
         text = self.dedup_input.get("1.0", tk.END).strip()
         if not text:
             messagebox.showwarning("提示", "请输入文本")
@@ -2124,6 +2597,9 @@ class EconPaperApp:
     
     def _run_deai(self):
         """运行降AI"""
+        if not self._check_api_before_action("降AI痕迹"):
+            return
+        
         text = self.dedup_input.get("1.0", tk.END).strip()
         if not text:
             messagebox.showwarning("提示", "请输入文本")
@@ -2159,6 +2635,9 @@ class EconPaperApp:
     
     def _run_both_dedup(self):
         """运行降重+降AI"""
+        if not self._check_api_before_action("深度处理"):
+            return
+        
         text = self.dedup_input.get("1.0", tk.END).strip()
         if not text:
             messagebox.showwarning("提示", "请输入文本")
@@ -2207,6 +2686,9 @@ class EconPaperApp:
     
     def _ai_expand_keywords(self):
         """AI智能扩展关键词"""
+        if not self._check_api_before_action("AI扩展关键词"):
+            return
+        
         query = self.search_query.get().strip()
         if not query:
             messagebox.showwarning("提示", "请先输入初始关键词")
@@ -2579,6 +3061,9 @@ class EconPaperApp:
     
     def _run_revision(self):
         """运行退修处理"""
+        if not self._check_api_before_action("退修助手"):
+            return
+        
         comments = self.rev_comments.get("1.0", tk.END).strip()
         if not comments:
             messagebox.showwarning("提示", "请粘贴审稿意见")
@@ -2681,6 +3166,10 @@ class EconPaperApp:
                 embed_base = self.setting_embed_base.get() if (hasattr(self, 'setting_embed_base') and hasattr(self.setting_embed_base, 'winfo_exists') and self.setting_embed_base.winfo_exists()) else self.setting_llm_base.get()
                 embed_key = self.setting_embed_key.get() if (hasattr(self, 'setting_embed_key') and hasattr(self.setting_embed_key, 'winfo_exists') and self.setting_embed_key.winfo_exists()) else self.setting_llm_key.get()
             
+            # 获取存储目录配置
+            data_dir = self.setting_data_dir.get().strip() if hasattr(self, 'setting_data_dir') else ""
+            workspace_dir = self.setting_workspace_dir.get().strip() if hasattr(self, 'setting_workspace_dir') else ""
+            
             lines = [
                 f"# EconPaper Pro 配置",
                 f"",
@@ -2693,6 +3182,10 @@ class EconPaperApp:
                 f"EMBEDDING_API_BASE={embed_base}",
                 f"EMBEDDING_API_KEY={embed_key}",
                 f"EMBEDDING_MODEL={self.setting_embed_model.get()}",
+                f"",
+                f"# 存储目录配置 (避免占用C盘)",
+                f"DATA_DIR={data_dir}",
+                f"WORKSPACE_DIR={workspace_dir}",
             ]
             
             with open(env_path, "w", encoding="utf-8") as f:
