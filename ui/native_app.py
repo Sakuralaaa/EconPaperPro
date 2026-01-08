@@ -104,6 +104,10 @@ class EconPaperApp:
         self.api_configured = False  # API是否已配置
         self.active_tasks = {}  # 活动任务跟踪
         
+        # 历史记录管理器 - 必须在 _create_layout() 之前初始化
+        # 因为 _create_template_selector() 需要使用 self.history
+        self.history = HistoryManager()
+        
         # 创建主布局
         self._create_layout()
         
@@ -123,9 +127,6 @@ class EconPaperApp:
         
         # 工作流连接器（管理页面间的数据流转）
         self.workflow = WorkflowConnector(self)
-        
-        # 历史记录管理器
-        self.history = HistoryManager()
         
         # 启动UI更新循环
         self._process_queue()
