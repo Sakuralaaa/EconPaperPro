@@ -5,11 +5,12 @@ LLM客户端模块
 """
 
 import time
-from typing import Optional, List, Dict, Generator, Union
+from typing import Optional, List, Dict, Generator, Union, Any
 from openai import OpenAI
 import openai
 from config.settings import settings
 from core.logger import get_logger, log_api_call
+from core.retry import with_retry
 from core.exceptions import (
     MissingAPIKeyError,
     LLMConnectionError,
@@ -76,9 +77,10 @@ class LLMClient:
         
         logger.info(f"LLM 客户端初始化成功: api_base={self.api_base}, model={self.model}")
     
+    @with_retry(max_retries=3)
     def chat(
         self,
-        messages: List[Dict[str, str]],
+        messages: List[Any],
         stream: bool = False,
         **kwargs
     ) -> Union[str, Generator[str, None, None]]:
@@ -109,7 +111,7 @@ class LLMClient:
         logger.debug(f"发送 LLM 请求: model={self.model}, stream={stream}, messages_count={len(messages)}")
         
         try:
-            response = self.client.chat.completions.create(
+            response: Any = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 temperature=kwargs.get("temperature", self.temperature),
@@ -123,14 +125,33 @@ class LLMClient:
                 logger.debug("返回流式响应生成器")
                 return self._stream_response(response)
             else:
+                # 非流式响应
                 result = response.choices[0].message.content or ""
                 elapsed = time.time() - start_time
                 
                 # 记录 API 调用日志
+                usage = getattr(response, 'usage', None)
+                tokens_used = getattr(usage, 'total_tokens', None) if usage else None
+                
+                # 持久化用量统计 (P2)
+                try:
+                    from core.history import HistoryManager
+                    history = HistoryManager()
+                    prompt_tokens = getattr(usage, 'prompt_tokens', 0) if usage else 0
+                    completion_tokens = getattr(usage, 'completion_tokens', 0) if usage else 0
+                    history.log_usage(
+                        model=self.model,
+                        action_type="chat",
+                        prompt_tokens=prompt_tokens,
+                        completion_tokens=completion_tokens
+                    )
+                except Exception:
+                    pass
+
                 log_api_call(
                     action="chat",
                     model=self.model,
-                    tokens_used=getattr(response.usage, 'total_tokens', None) if hasattr(response, 'usage') else None,
+                    tokens_used=tokens_used,
                     latency_ms=elapsed * 1000  # 转换为毫秒
                 )
                 

@@ -4,7 +4,7 @@
 处理审稿意见，生成回应策略和回应信
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Generator
 from dataclasses import dataclass, field
 from core.llm import get_llm_client
 from core.prompts import PromptTemplates
@@ -415,7 +415,40 @@ class RevisionAgent:
             
         except Exception as e:
             return f"回应信生成失败: {str(e)}"
-    
+
+    def process_comments_stream(
+        self,
+        comments: str,
+        paper_summary: Optional[str] = None
+    ) -> Generator[str, None, None]:
+        """
+        流式处理审稿意见 (P0)
+        由于退修逻辑较为复杂（多步解析），此流式主要用于回应信生成部分，
+        或通过分段 Yield 提供中间反馈。
+        """
+        yield "🔄 正在解析审稿意见...\n"
+        parsed = self.parse_comments(comments)
+        
+        yield f"✅ 解析完成，共发现 {len(parsed)} 条意见。正在制定回应策略...\n"
+        strategies = self.generate_strategies(parsed, paper_summary)
+        
+        yield "📝 正在生成正式回应信...\n\n"
+        
+        # 构造策略摘要
+        strategy_text = ""
+        for i, strategy in enumerate(strategies, 1):
+            strategy_text += f"\n问题{i}:\n- 理解: {strategy.understanding}\n- 态度: {strategy.attitude}\n- 措施: {'; '.join(strategy.actions)}\n- 预期修改: {strategy.expected_changes}\n"
+        
+        prompt = PromptTemplates.GENERATE_RESPONSE_LETTER.format(
+            response_strategy=strategy_text
+        )
+        
+        # 调用流式接口生成回应信内容
+        yield from self.llm.invoke_stream(
+            prompt,
+            system_prompt="你是学术论文写作专家，请撰写正式的审稿意见回应信。"
+        )
+
     def _extract_modifications(
         self,
         strategies: List[ResponseStrategy]

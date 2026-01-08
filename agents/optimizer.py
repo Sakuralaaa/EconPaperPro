@@ -4,7 +4,7 @@
 对论文各部分进行深度优化
 """
 
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Generator
 from dataclasses import dataclass
 from core.llm import get_llm_client
 from core.prompts import PromptTemplates
@@ -193,6 +193,41 @@ class OptimizerAgent:
                 error=str(e)
             )
     
+    def optimize_single_section_stream(
+        self,
+        section_name: str,
+        content: str,
+        context: Optional[str] = None
+    ) -> Generator[str, None, None]:
+        """
+        流式优化单个部分 (P0)
+        
+        Yields:
+            str: 优化后的文本片段
+        """
+        if section_name not in self.SECTION_PROMPTS:
+            yield f"错误: 不支持优化的部分 {section_name}"
+            return
+
+        prompt_template = self.SECTION_PROMPTS[section_name]
+        prompt_kwargs = {"content": content}
+        if context:
+            prompt_kwargs["context"] = context
+        if section_name == "title":
+            prompt_kwargs["title"] = content
+            prompt_kwargs["abstract"] = context or ""
+            prompt_kwargs["target_journal"] = "经济研究/管理世界"
+        if section_name == "abstract":
+            prompt_kwargs["summary"] = context or ""
+        
+        prompt = prompt_template.format(**prompt_kwargs)
+        
+        yield from self.llm.invoke_stream(
+            prompt,
+            system_prompt=PromptTemplates.SYSTEM_ACADEMIC_EXPERT,
+            temperature=self.stage_config["temperature"]
+        )
+
     def optimize_for_journal(
         self,
         parsed_structure: Dict,

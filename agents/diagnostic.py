@@ -4,7 +4,7 @@
 对论文进行多维度诊断分析
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Callable
 from dataclasses import dataclass, field
 from core.llm import get_llm_client
 from core.prompts import PromptTemplates
@@ -59,7 +59,8 @@ class DiagnosticAgent:
     def diagnose(
         self,
         content: str,
-        focus: Optional[List[str]] = None
+        focus: Optional[List[str]] = None,
+        on_progress: Optional[Callable[[int, int, str], None]] = None
     ) -> FullDiagnosisReport:
         """
         执行论文诊断
@@ -67,15 +68,21 @@ class DiagnosticAgent:
         Args:
             content: 论文内容
             focus: 聚焦的诊断维度，None 表示全部
+            on_progress: 进度回调 (current, total, message)
             
         Returns:
             FullDiagnosisReport: 完整诊断报告
         """
         dimensions_to_check = focus if focus else list(self.DIMENSIONS.keys())
+        total = len(dimensions_to_check)
         
         results = {}
-        for dim in dimensions_to_check:
+        for i, dim in enumerate(dimensions_to_check, 1):
             if dim in self.DIMENSIONS:
+                dim_name = self.DIMENSIONS[dim][0]
+                if on_progress:
+                    on_progress(i, total, f"正在诊断: {dim_name}")
+                
                 result = self._diagnose_dimension(content, dim)
                 results[dim] = result
         

@@ -4,7 +4,7 @@
 编排完整的论文优化流程
 """
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Callable
 from dataclasses import dataclass, field
 from parsers.structure import StructureRecognizer
 from parsers.pdf_parser import PDFParser
@@ -76,8 +76,10 @@ class MasterAgent:
                     text = self.docx_parser.parse_bytes(content)
                 else:
                     text = content.decode("utf-8")
-            else:
+            elif isinstance(content, str):
                 text = content
+            else:
+                text = str(content)
             
             # 2. 识别结构
             paper_structure = self.structure_recognizer.recognize(text)
@@ -120,7 +122,8 @@ class MasterAgent:
         self,
         content: Union[str, bytes],
         file_type: Optional[str] = None,
-        focus: Optional[List[str]] = None
+        focus: Optional[List[str]] = None,
+        on_progress: Optional[Callable[[int, int, str], None]] = None
     ) -> FullDiagnosisReport:
         """
         仅执行诊断
@@ -141,10 +144,12 @@ class MasterAgent:
                 text = self.docx_parser.parse_bytes(content)
             else:
                 text = content.decode("utf-8")
-        else:
+        elif isinstance(content, str):
             text = content
+        else:
+            text = str(content)
         
-        return self.diagnostic_agent.diagnose(text, focus=focus)
+        return self.diagnostic_agent.diagnose(text, focus=focus, on_progress=on_progress)
     
     def optimize_section(
         self,
