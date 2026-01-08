@@ -3,7 +3,7 @@
 ## 审查概述
 
 **审查日期**: 2026-01-08
-**最后更新**: 2026-01-08 (修复状态更新)
+**最后更新**: 2026-01-08 (启动错误修复)
 **审查范围**: 核心模块 `ui/native_app.py`, `ui/components.py`, `core/history.py`, `agents/optimizer.py`, `agents/revision.py`, `utils/diff.py`
 **审查目的**: 识别潜在的 bug、逻辑错误和代码质量问题
 
@@ -23,6 +23,9 @@
 | #8 异常处理仅打印不记录 | P3 | ✅ **已修复** | history.py:1-15, 112-159 |
 | #9 Pylance 警告 | P3 | ✅ **已修复** | native_app.py:44-48 |
 | #10 UI 组件重建导致输入丢失 | P2 | ✅ **已修复** | native_app.py:2499-2645 |
+| #11 history 属性初始化时序 | P0 | ✅ **已修复** | native_app.py:107-109 |
+| #12 settings 按钮缺少 indicator 键 | P0 | ✅ **已修复** | native_app.py:361-362, 386 |
+| #13 _show_page 访问未创建的 status_bar | P1 | ✅ **已修复** | native_app.py:485-495 |
 
 ---
 
@@ -324,6 +327,17 @@ def _create_form_row(self, parent, label_text, widget_factory, **kwargs):
 
 ## 修复日志
 
+### 2026-01-08 (第三次更新 - 启动错误修复)
+- ✅ 修复问题 #11: history 属性初始化时序错误
+  - **原因**: `_create_layout()` 调用的 `_create_template_selector()` 需要访问 `self.history`，但 history 在 `_create_layout()` 之后才初始化
+  - **修复**: 将 `self.history = HistoryManager()` 移动到第 107-109 行，在 `_create_layout()` 之前初始化
+- ✅ 修复问题 #12: settings 按钮缺少 indicator 键导致 KeyError
+  - **原因**: `_update_nav_style()` 方法访问 `btn["indicator"]`，但 settings 按钮字典缺少此键
+  - **修复**: 在第 361-362 行添加 `settings_indicator` 控件，并在第 386 行将其加入按钮字典
+- ✅ 修复问题 #13: `_show_page` 在初始化期间访问未创建的 `status_bar`
+  - **原因**: `_create_layout()` 内部调用 `_show_page("diagnose")`，但 `status_bar` 在 `_create_layout()` 之后的 `_create_status_bar()` 才创建
+  - **修复**: 在第 485 行添加 `hasattr(self, 'status_bar')` 安全检查
+
 ### 2026-01-08 (第二次更新)
 - ✅ 修复问题 #2: Lambda 闭包陷阱 - 所有4处位置均已使用默认参数捕获循环变量
   - `_run_diagnose` 第 3193 行
@@ -344,4 +358,4 @@ def _create_form_row(self, parent, label_text, widget_factory, **kwargs):
 ---
 
 *报告生成时间: 2026-01-08*
-*最后更新: 2026-01-08 18:05*
+*最后更新: 2026-01-08 18:45*

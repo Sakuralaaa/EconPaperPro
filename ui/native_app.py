@@ -357,6 +357,10 @@ class EconPaperApp:
         settings_inner = tk.Frame(settings_btn, bg=ModernStyle.BG_SIDEBAR, padx=15, pady=12)
         settings_inner.pack(fill=tk.X)
         
+        # 添加左侧指示条（与主导航按钮保持一致）
+        settings_indicator = tk.Frame(settings_btn, bg=ModernStyle.BG_SIDEBAR, width=4)
+        settings_indicator.place(relx=0, rely=0, relheight=1)
+        
         settings_icon = tk.Label(
             settings_inner,
             text="⚙️",
@@ -379,6 +383,7 @@ class EconPaperApp:
         self.nav_buttons["settings"] = {
             "frame": settings_btn,
             "inner": settings_inner,
+            "indicator": settings_indicator,
             "title": settings_text,
             "desc": None
         }
@@ -476,17 +481,18 @@ class EconPaperApp:
         if page_id in self.pages:
             self.pages[page_id].pack(fill=tk.BOTH, expand=True)
             
-        # 更新状态栏
-        page_names = {
-            "diagnose": "论文诊断",
-            "optimize": "深度优化",
-            "dedup": "降重降AI",
-            "search": "学术搜索",
-            "revision": "退修助手",
-            "history": "历史记录",
-            "settings": "系统设置"
-        }
-        self.status_bar.set_status(f"当前页面: {page_names.get(page_id, page_id)}", "info")
+        # 更新状态栏 - 安全检查，因为初始化时 status_bar 可能还未创建
+        if hasattr(self, 'status_bar'):
+            page_names = {
+                "diagnose": "论文诊断",
+                "optimize": "深度优化",
+                "dedup": "降重降AI",
+                "search": "学术搜索",
+                "revision": "退修助手",
+                "history": "历史记录",
+                "settings": "系统设置"
+            }
+            self.status_bar.set_status(f"当前页面: {page_names.get(page_id, page_id)}", "info")
     
     def _create_top_bar(self):
         """创建全局顶部工具栏 - 支持快速切换模型 (P3)"""
